@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+
+<meta charset="utf-8" />
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+
+<meta name="date" content="2019-11-11" />
+
+<title>Set up an Azure ML workspace</title>
+
+
+
+<style type="text/css">code{white-space: pre;}</style>
+<style type="text/css" data-origin="pandoc">
+a.sourceLine { display: inline-block; line-height: 1.25; }
+a.sourceLine { pointer-events: none; color: inherit; text-decoration: inherit; }
+a.sourceLine:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode { white-space: pre; position: relative; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+code.sourceCode { white-space: pre-wrap; }
+a.sourceLine { text-indent: -1em; padding-left: 1em; }
+}
+pre.numberSource a.sourceLine
+  { position: relative; left: -4em; }
+pre.numberSource a.sourceLine::before
+  { content: attr(title);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; pointer-events: all; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+    color: #aaaaaa;
+  }
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+div.sourceCode
+  {  }
+@media screen {
+a.sourceLine::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code span.at { color: #7d9029; } /* Attribute */
+code span.bn { color: #40a070; } /* BaseN */
+code span.bu { } /* BuiltIn */
+code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code span.ch { color: #4070a0; } /* Char */
+code span.cn { color: #880000; } /* Constant */
+code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code span.dt { color: #902000; } /* DataType */
+code span.dv { color: #40a070; } /* DecVal */
+code span.er { color: #ff0000; font-weight: bold; } /* Error */
+code span.ex { } /* Extension */
+code span.fl { color: #40a070; } /* Float */
+code span.fu { color: #06287e; } /* Function */
+code span.im { } /* Import */
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code span.op { color: #666666; } /* Operator */
+code span.ot { color: #007020; } /* Other */
+code span.pp { color: #bc7a00; } /* Preprocessor */
+code span.sc { color: #4070a0; } /* SpecialChar */
+code span.ss { color: #bb6688; } /* SpecialString */
+code span.st { color: #4070a0; } /* String */
+code span.va { color: #19177c; } /* Variable */
+code span.vs { color: #4070a0; } /* VerbatimString */
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    for (var j = 0; j < rules.length; j++) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") continue;
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') continue;
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#header {
+text-align: center;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; }  code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">Set up an Azure ML workspace</h1>
+<h4 class="date">2019-11-11</h4>
+
+
+
+<p>This tutorial gets you started with the Azure Machine Learning service by walking through the requirements and instructions for setting up a workspace, the top-level resource for Azure ML.</p>
+<p>You do not need run this if you are working on an Azure Machine Learning Compute Instance, as the compute instance is already associated with an existing workspace.</p>
+<div id="what-is-an-azure-ml-workspace" class="section level2">
+<h2>What is an Azure ML workspace?</h2>
+<p>The workspace is the top-level resource for Azure ML, providing a centralized place to work with all the artifacts you create when you use Azure ML. The workspace keeps a history of all training runs, including logs, metrics, output, and a snapshot of your scripts.</p>
+<p>When you create a new workspace, it automatically creates several Azure resources that are used by the workspace:</p>
+<ul>
+<li>Azure Container Registry: Registers docker containers that you use during training and when you deploy a model. To minimize costs, ACR is lazy-loaded until deployment images are created.</li>
+<li>Azure Storage account: Used as the default datastore for the workspace.</li>
+<li>Azure Application Insights: Stores monitoring information about your models.</li>
+<li>Azure Key Vault: Stores secrets that are used by compute targets and other sensitive information that’s needed by the workspace.</li>
+</ul>
+</div>
+<div id="setup" class="section level2">
+<h2>Setup</h2>
+<p>This section describes the steps required before you can access any Azure ML service functionality.</p>
+<div id="azure-subscription" class="section level3">
+<h3>Azure subscription</h3>
+<p>In order to create an Azure ML workspace, first you need access to an Azure subscription. An Azure subscription allows you to manage storage, compute, and other assets in the Azure cloud. You can <a href="https://azure.microsoft.com/en-us/free/">create a new subscription</a> or access existing subscription information from the <a href="https://portal.azure.com/">Azure portal</a>. Later in this tutorial you will need information such as your subscription ID in order to create and access workspaces.</p>
+</div>
+<div id="azure-ml-sdk-installation" class="section level3">
+<h3>Azure ML SDK installation</h3>
+<p>Follow the <a href="https://azure.github.io/azureml-sdk-for-r/articles/installation.html">installation guide</a> to install <strong>azuremlsdk</strong> on your machine.</p>
+</div>
+</div>
+<div id="configure-your-workspace" class="section level2">
+<h2>Configure your workspace</h2>
+<div id="workspace-parameters" class="section level3">
+<h3>Workspace parameters</h3>
+<p>To use an Azure ML workspace, you will need to supply the following information:</p>
+<ul>
+<li>Your subscription ID</li>
+<li>A resource group name</li>
+<li>(Optional) The region that will host your workspace</li>
+<li>A name for your workspace</li>
+</ul>
+<p>You can get your subscription ID from the <a href="https://portal.azure.com/">Azure portal</a>.</p>
+<p>You will also need access to a <a href="https://docs.microsoft.com/en-us/azure/azure-resource-manager/resource-group-overview#resource-groups">resource group</a>, which organizes Azure resources and provides a default region for the resources in a group. You can see what resource groups to which you have access, or create a new one in the Azure portal. If you don’t have a resource group, the <code>create_workspace()</code> method will create one for you using the name you provide.</p>
+<p>The region to host your workspace will be used if you are creating a new workspace. You do not need to specify this if you are using an existing workspace. You can find the list of supported regions <a href="https://azure.microsoft.com/en-us/global-infrastructure/services/?products=machine-learning-service">here</a>. You should pick a region that is close to your location or that contains your data.</p>
+<p>The name for your workspace is unique within the subscription and should be descriptive enough to discern among other workspaces. The subscription may be used only by you, or it may be used by your department or your entire enterprise, so choose a name that makes sense for your situation.</p>
+<p>The following code chunk allows you to specify your workspace parameters. It uses <code>Sys.getenv</code> to read values from environment variables, which is useful for automation. If no environment variable exists, the parameters will be set to the specified default values. Replace the default values in the code below with your default parameter values.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb1-1" title="1">subscription_id &lt;-<span class="st"> </span><span class="kw">Sys.getenv</span>(<span class="st">&quot;SUBSCRIPTION_ID&quot;</span>, <span class="dt">unset =</span> <span class="st">&quot;&lt;my-subscription-id&gt;&quot;</span>)</a>
+<a class="sourceLine" id="cb1-2" title="2">resource_group &lt;-<span class="st"> </span><span class="kw">Sys.getenv</span>(<span class="st">&quot;RESOURCE_GROUP&quot;</span>, <span class="dt">default=</span><span class="st">&quot;&lt;my-resource-group&gt;&quot;</span>)</a>
+<a class="sourceLine" id="cb1-3" title="3">workspace_name &lt;-<span class="st"> </span><span class="kw">Sys.getenv</span>(<span class="st">&quot;WORKSPACE_NAME&quot;</span>, <span class="dt">default=</span><span class="st">&quot;&lt;my-workspace-name&gt;&quot;</span>)</a>
+<a class="sourceLine" id="cb1-4" title="4">workspace_region &lt;-<span class="st"> </span><span class="kw">Sys.getenv</span>(<span class="st">&quot;WORKSPACE_REGION&quot;</span>, <span class="dt">default=</span><span class="st">&quot;eastus2&quot;</span>)</a></code></pre></div>
+</div>
+<div id="create-a-new-workspace" class="section level3">
+<h3>Create a new workspace</h3>
+<p>If you don’t have an existing workspace and are the owner of the subscription or resource group, you can create a new workspace. If you don’t have a resource group, <code>create_workspace()</code> will create one for you using the name you provide. If you don’t want it to do so, set the <code>create_resource_group = FALSE</code> parameter.</p>
+<p>Note: As with other Azure services, there are limits on certain resources (e.g. AmlCompute quota) associated with the Azure ML service. Please read this <a href="https://docs.microsoft.com/en-us/azure/machine-learning/service/how-to-manage-quotas">article</a> on the default limits and how to request more quota.</p>
+<p>This cell will create an Azure ML workspace for you in a subscription, provided you have the correct permissions.</p>
+<p>This will fail if:</p>
+<ul>
+<li>You do not have permission to create a workspace in the resource group.</li>
+<li>You do not have permission to create a resource group if it does not exist.</li>
+<li>You are not a subscription owner or contributor and no Azure ML workspaces have ever been created in this subscription.</li>
+</ul>
+<p>If workspace creation fails, please work with your IT admin to provide you with the appropriate permissions or to provision the required resources.</p>
+<p>There are additional parameters that are not shown below that can be configured when creating a workspace. Please see <a href="https://azure.github.io/azureml-sdk-for-r/reference/create_workspace.html"><code>create_workspace()</code></a> for more details.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">library</span>(azuremlsdk)</a>
+<a class="sourceLine" id="cb2-2" title="2"></a>
+<a class="sourceLine" id="cb2-3" title="3">ws &lt;-<span class="st"> </span><span class="kw">create_workspace</span>(<span class="dt">name =</span> workspace_name,</a>
+<a class="sourceLine" id="cb2-4" title="4">                       <span class="dt">subscription_id =</span> subscription_id,</a>
+<a class="sourceLine" id="cb2-5" title="5">                       <span class="dt">resource_group =</span> resource_group,</a>
+<a class="sourceLine" id="cb2-6" title="6">                       <span class="dt">location =</span> workspace_region,</a>
+<a class="sourceLine" id="cb2-7" title="7">                       <span class="dt">exist_ok =</span> <span class="ot">TRUE</span>)</a></code></pre></div>
+<p>You can out write out the workspace ARM properties to a config file with <a href="https://azure.github.io/azureml-sdk-for-r/reference/write_workspace_config.html"><code>write_workspace_config()</code></a>. The method provides a simple way of reusing the same workspace across multiple files or projects. Users can save the workspace details with <code>write_workspace_config()</code>, and use <a href="https://azure.github.io/azureml-sdk-for-r/reference/load_workspace_from_config.html"><code>load_workspace_from_config()</code></a> to load the same workspace in different files or projects without retyping the workspace ARM properties. The method defaults to writing out the config file to the current working directory with “config.json” as the file name. To specify a different path or file name, set the <code>path</code> and <code>file_name</code> parameters.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb3-1" title="1"><span class="kw">write_workspace_config</span>(ws)</a></code></pre></div>
+</div>
+<div id="access-an-existing-workspace" class="section level3">
+<h3>Access an existing workspace</h3>
+<p>You can access an existing workspace in a couple of ways. If your workspace properties were previously saved to a config file, you can load the workspace as follows:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb4-1" title="1">ws &lt;-<span class="st"> </span><span class="kw">load_workspace_from_config</span>()</a></code></pre></div>
+<p>If Azure ML cannot find the config file, specify the path to the config file with the <code>path</code> parameter. The method defaults to starting the search in the current directory.</p>
+<p>You can also initialize a workspace using the <a href="https://azure.github.io/azureml-sdk-for-r/reference/get_workspace.html"><code>get_workspace()</code></a> method.</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb5-1" title="1">ws &lt;-<span class="st"> </span><span class="kw">get_workspace</span>(<span class="dt">name =</span> workspace_name,</a>
+<a class="sourceLine" id="cb5-2" title="2">                    <span class="dt">subscription_id =</span> subscription_id,</a>
+<a class="sourceLine" id="cb5-3" title="3">                    <span class="dt">resource_group =</span> resource_group)</a></code></pre></div>
+</div>
+</div>
+
+
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>
