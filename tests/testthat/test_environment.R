@@ -46,17 +46,17 @@ test_that("create dockerfile", {
                                   "r-remotes r-e1071 r-optparse && conda ",
                                   "clean -ay && pip install --no-cache-dir ",
                                   "azureml-defaults\nENV TAR=\"/bin/tar\"\n",
-                                  "RUN R -e \"remotes::install_github(",
-                                  "repo = 'https://github.com/Azure/azureml-",
-                                  "sdk-for-r', ref = 'v0.5.6', upgrade = FALSE)\"\n"))
+                                  "RUN R -e \"remotes::install_cran('azuremlsdk'",
+                                  ", repos = 'https://cloud.r-project.org/', ",
+                                  "upgrade = FALSE)\"\n"))
 
   # cran packages
   dockerfile <- generate_docker_file(custom_docker_image = "ubuntu-18.04",
                                      cran_packages = c("ggplot2"),
                                      install_system_packages = FALSE)
   expect_equal(dockerfile, paste0("FROM ubuntu-18.04\nRUN R -e \"install.",
-                                  "packages('ggplot2', repos = \'http://cran",
-                                  ".us.r-project.org\')\"\n"))
+                                  "packages('ggplot2', repos = \'https://",
+                                  "cloud.r-project.org/\')\"\n"))
 
   # github packages
   dockerfile <- generate_docker_file(github_packages = c(

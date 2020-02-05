@@ -1,7 +1,7 @@
 Package: azuremlsdk
 Type: Package
 Title: Interface to the 'Azure Machine Learning' 'SDK'
-Version: 0.5.7
+Version: 0.6.85
 Authors@R: c(
     person("Heemanshu", "Suri", email = "Heemanshu.Suri@microsoft.com", role = c("cre", "aut")),
     person("Billy", "Hu", email = "ninhu@microsoft.com", role = c("aut")),
@@ -26,11 +26,11 @@ License: MIT + file LICENSE
 RoxygenNote: 6.1.1
 Depends: R (>= 3.5.0)
 Imports: ggplot2, reticulate (>= 1.12), plyr (>= 1.8), DT, rstudioapi
-        (>= 0.7), htmltools
+        (>= 0.7), htmltools, servr, shiny, shinycssloaders
 Suggests: rmarkdown, knitr, testthat, dplyr, jsonlite
 VignetteBuilder: knitr
 NeedsCompilation: no
-Packaged: 2019-11-11 22:21:12 UTC; hesuri
+Packaged: 2020-02-05 22:05:55 UTC; hesuri
 Author: Heemanshu Suri [cre, aut],
   Billy Hu [aut],
   Diondra Peck [aut],
@@ -43,4 +43,4 @@ Author: Heemanshu Suri [cre, aut],
   RStudio Inc. [cph] (Examples and Tutorials)
 Maintainer: Heemanshu Suri <Heemanshu.Suri@microsoft.com>
 Repository: CRAN
-Date/Publication: 2019-11-15 13:00:06 UTC
+Date/Publication: 2020-02-05 22:30:02 UTC

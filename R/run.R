@@ -6,6 +6,10 @@
 #' Retrieve the metrics logged to a run that were logged with
 #' the `log_*()` methods.
 #' @param run The `Run` object.
+#' @param name The name of the metric.
+#' @param recursive If specified, returns runs matching specified *"property"* or {*"property"*: *"value"*}.
+#' @param run_type run type
+#' @param populate Boolean indicating whether to fetch the contents of external data linked to the metric.
 #' @return A named list of the metrics associated with the run,
 #' e.g. `list("metric_name" = metric)`.
 #' @export
@@ -17,8 +21,12 @@
 #' metrics <- get_run_metrics(run)
 #' }
 #' @md
-get_run_metrics <- function(run) {
-  run$get_metrics()
+get_run_metrics <- function(run,
+                            name = NULL,
+                            recursive = FALSE,
+                            run_type = NULL,
+                            populate = FALSE) {
+    run$get_metrics(name, recursive, run_type, populate)
 }
 
 #' Wait for the completion of a run
@@ -536,21 +544,10 @@ log_table_to_run <- function(name, value, description = "", run = NULL) {
   invisible(NULL)
 }
 
-#' Plot table of run details
-#' @description
-#' Plot table of run details in RStudio Viewer or browser.
-#' This table does not auto-refresh. To see current values,
-#' re-run the command or click the web view link to view more
-#' details in real time.
-#'
-#' If you are running this method from an RMarkdown file, the
-#' run details table will show up in the code chunk output
-#' instead of the Viewer.
+#' Generate table of run details
 #' @param run The `Run` object.
-#' @return None
-#' @export
 #' @md
-view_run_details <- function(run) {
+.create_run_details_plot <- function(run) {
   handle_null <- function(arg, placeholder = "-") {
     if (is.list(arg) && !length(arg) || arg == "" || is.null(arg)) {
       placeholder
@@ -610,7 +607,7 @@ view_run_details <- function(run) {
     df_values <- c(df_values, "Warnings")
   }
 
-  if (run$get_status() == "Failed") {
+  if (run$status == "Failed") {
     error <- details$error$error$message
     error <- handle_null(error,
                          "Detailed error not set on the Run. Please check
@@ -629,13 +626,110 @@ view_run_details <- function(run) {
                       colnames = c(" ", " "),
                       caption = htmltools::tags$caption(
                         style = "caption-side: top;
-                                 text-align: center;
-                                 font-size: 125%",
+                        text-align: center;
+                        font-size: 125%",
                         "Run Details"),
                       options = list(dom = "t",
                                      scrollY = "800px",
                                      pageLength = 1000))
   DT::formatStyle(dt, columns = c("V1"), fontWeight = "bold")
+}
+
+#' Initialize run details widget
+#' @description
+#' Initializes a ShinyApp in RStudio Viewer (or the default browser if Viewer
+#' is unavailable) showing details of the submitted run. If using RStudio, the
+#' plot will auto-update with information collected from the server. For more
+#' details about the run, click the web view link. The widget will stop running
+#' once the run has reached a terminal state: "Failed", "Completed", or
+#' "Canceled".
+#'
+#' If you are running this method from an RMarkdown file, the
+#' run details table will show up in the code chunk output
+#' instead of the Viewer.
+#' @param run Run object
+#' @param auto_refresh Boolean indicating whether or not widget should update
+#' run details automatically. The default is TRUE when using RStudio.
+#' @export
+view_run_details <- function(run, auto_refresh = TRUE) {
+  if (rstudioapi::isAvailable() &&
+      auto_refresh) {
+
+    # select random available registered port
+    port <- servr::random_port(NULL)
+
+    # import objects needed for Shiny app
+    widget_obj_names <- list("subscription_id",
+                             "rg",
+                             "ws_name",
+                             "exp_name",
+                             "run_id",
+                             "run_details_plot",
+                             "port",
+                             "shiny",
+                             "shinycssloaders",
+                             "start_time")
+    widget_obj_vals <- list(run$experiment$workspace$subscription_id,
+                            run$experiment$workspace$resource_group,
+                            run$experiment$workspace$name,
+                            run$experiment$name,
+                            run$id,
+                            .create_run_details_plot(run),
+                            port,
+                            shinycssloaders::withSpinner,
+                            shiny::shinyOptions,
+                            Sys.time())
+
+    .envir <- as.environment(1)
+
+    lapply(seq_along(widget_obj_names),
+           function(x) {
+             assign(widget_obj_names[[x]],
+                    widget_obj_vals[[x]],
+                    envir = .envir)
+           }
+    )
+
+    # stop and remove any existing widget job before submitting script
+    # nolint start
+    existing_job_id <- Sys.getenv("AZUREML_RSTUDIO_WIDGET_JOB")
+
+    if (existing_job_id != "") {
+      try(rstudioapi::jobSetState(existing_job_id, "succeeded"),
+          silent = TRUE)
+      try(rstudioapi::jobRemove(existing_job_id), silent = TRUE)
+    }
+
+    path <- system.file("widget", "app.R", package = "azuremlsdk")
+    current_job_id <- rstudioapi::jobRunScript(path,
+                                               name = "AzureML Widget",
+                                               importEnv = TRUE)
+    Sys.setenv(AZUREML_RSTUDIO_WIDGET_JOB = current_job_id)
+    # nolint end
+
+    # check if using notebook vm and assign host
+    nb_vm_file_path <- "~/../../mnt/azmnt/.nbvm"
+    if (file.exists(nb_vm_file_path)) {
+      nb_vm_file_info <- readLines(nb_vm_file_path, warn = FALSE)
+      instance_name <- gsub("instance=", "", nb_vm_file_info[2])
+      domain_suffix <- gsub("domainsuffix=", "", nb_vm_file_info[3])
+
+      host <- paste0("https://", instance_name, "-", port, ".", domain_suffix)
+      Sys.sleep(1) # Notebook VM server requires longer to connect to host
+    } else {
+      host <- paste0("http://localhost:", port)
+    }
+
+    # initialize viewer pane or browser
+    viewer <- getOption("viewer")
+    if (!is.null(viewer)) {
+      viewer(host)
+    } else {
+      utils::browseURL(host)
+    }
+  } else {
+    .create_run_details_plot(run)
+  }
 }
 
 #' Upload files to a run
@@ -739,4 +833,82 @@ complete_run <- function(run) {
   run$complete()
 
   invisible(NULL)
+}
+
+#' Create a child run
+#'
+#' @description
+#' Create a child run. This is used to isolate part of a run into a subsection.
+#' @param parent_run The parent `Run` object.
+#' @param name An optional name for the child run, typically specified for a "part"
+#' @param run_id An optional run ID for the child, otherwise it is auto-generated.
+#' Typically this parameter is not set.
+#' @param outputs Optional outputs directory to track for the child.
+#' @return The child run, a `Run` object.
+#' @export
+#' @md
+create_child_run <- function(parent_run,
+                             name = NULL,
+                             run_id = NULL,
+                             outputs = NULL) {
+  parent_run$child_run(name, run_id, outputs)
+}
+
+#' Create one or many child runs
+#'
+#' @description
+#' Create one or many child runs.
+#' @param parent_run The parent `Run` object.
+#' @param count An optional number of children to create.
+#' @param tag_key An optional key to populate the Tags entry in all created children.
+#' @param tag_values An optional list of values that will map onto Tags for the list of runs created.
+#' @return The list of child runs, `Run` objects.
+#' @export
+#' @md
+create_child_runs <- function(parent_run,
+                              count = NULL,
+                              tag_key = NULL,
+                              tag_values = NULL) {
+  parent_run$create_children(count, tag_key, tag_values)
+}
+
+#' Submit an experiment and return the active child run
+#'
+#' @description
+#' Submit an experiment and return the active child run.
+#' @param parent_run The parent `Run` object.
+#' @param config The `RunConfig` object
+#' @param tags Tags to be added to the submitted run, e.g., {"tag": "value"}.
+#' @return A `Run` object.
+#' @md
+submit_child_run <- function(parent_run,
+                             config = NULL,
+                             tags = NULL) {
+  parent_run$submit_child(config, tags)
+}
+
+#' Get all children for the current run selected by specified filters
+#'
+#' @description
+#' Get all children for the current run selected by specified filters.
+#' @param parent_run The parent `Run` object.
+#' @param recursive Boolean indicating whether to recurse through all descendants.
+#' @param tags If specified, returns runs matching specified "tag" or list(tag = value).
+#' @param properties If specified, returns runs matching specified "property" or list(property = value).
+#' @param type If specified, returns runs matching this type.
+#' @param status If specified, returns runs with status specified "status".
+#' @return A list of child runs, `Run` objects.
+#' @export
+#' @md
+get_child_runs <- function(parent_run,
+                           recursive = FALSE,
+                           tags = NULL,
+                           properties = NULL,
+                           type = NULL,
+                           status = NULL) {
+  reticulate::iterate(parent_run$get_children(recursive,
+                                              tags,
+                                              properties,
+                                              type,
+                                              status))
 }
