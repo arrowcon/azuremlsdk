@@ -4,13 +4,25 @@
 \alias{estimator}
 \title{Create an estimator}
 \usage{
-estimator(source_directory, compute_target = NULL, vm_size = NULL,
-  vm_priority = NULL, entry_script = NULL, script_params = NULL,
-  cran_packages = NULL, github_packages = NULL,
-  custom_url_packages = NULL, custom_docker_image = NULL,
-  image_registry_details = NULL, use_gpu = FALSE,
-  environment_variables = NULL, shm_size = NULL,
-  max_run_duration_seconds = NULL, environment = NULL, inputs = NULL)
+estimator(
+  source_directory,
+  compute_target = NULL,
+  vm_size = NULL,
+  vm_priority = NULL,
+  entry_script = NULL,
+  script_params = NULL,
+  cran_packages = NULL,
+  github_packages = NULL,
+  custom_url_packages = NULL,
+  custom_docker_image = NULL,
+  image_registry_details = NULL,
+  use_gpu = FALSE,
+  environment_variables = NULL,
+  shm_size = NULL,
+  max_run_duration_seconds = NULL,
+  environment = NULL,
+  inputs = NULL
+)
 }
 \arguments{
 \item{source_directory}{A string of the local directory containing
@@ -38,9 +50,9 @@ to start training.}
 \item{script_params}{A named list of the command-line arguments to pass to
 the training script specified in \code{entry_script}.}
 
-\item{cran_packages}{A character vector of CRAN packages to be installed.}
+\item{cran_packages}{A list of \code{cran_package} objects to be installed.}
 
-\item{github_packages}{A character vector of GitHub packages to be installed.}
+\item{github_packages}{A list of \code{github_package} objects to be installed.}
 
 \item{custom_url_packages}{A character vector of packages to be installed
 from local directory or custom URL.}
@@ -100,6 +112,18 @@ on the predefined Docker images that are used for training if
 \code{custom_docker_image} is not specified, see the documentation
 \href{https://azure.github.io/azureml-sdk-for-r/reference/r_environment.html#predefined-docker-images}{here}.
 }
+\section{Examples}{
+\preformatted{r_env <- r_environment(name = "r-env",
+                       cran_packages = list(cran_package("dplyr"),
+                                            cran_package("ggplot2")))
+est <- estimator(source_directory = ".",
+                 entry_script = "train.R",
+                 compute_target = compute_target,
+                 environment = r_env)
+}
+}
+
 \seealso{
-\code{r_environment()}, \code{container_registry()}, \code{submit_experiment()}
+\code{\link[=r_environment]{r_environment()}}, \code{\link[=container_registry]{container_registry()}}, \code{\link[=submit_experiment]{submit_experiment()}},
+\code{\link[=dataset_consumption_config]{dataset_consumption_config()}}, \code{\link[=cran_package]{cran_package()}}
 }

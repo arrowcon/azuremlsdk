@@ -4,7 +4,7 @@
 \alias{mount_file_dataset}
 \title{Create a context manager for mounting file streams defined by the dataset as local files.}
 \usage{
-mount_file_dataset(dataset, mount_point)
+mount_file_dataset(dataset, mount_point = NULL)
 }
 \arguments{
 \item{dataset}{The Dataset object.}
@@ -23,5 +23,5 @@ To mount, you will need to enter the context manager and to unmount, exit from
 the context manager. Mount is only supported on Unix or Unix-like operating systems
 and libfuse must be present. If you are running inside a docker container, the docker
 container must be started with the \code{--privileged} flag or started with
-\code{--cap-add SYS_ADMIN --device /dev/fuse}.
+\verb{--cap-add SYS_ADMIN --device /dev/fuse}.
 }

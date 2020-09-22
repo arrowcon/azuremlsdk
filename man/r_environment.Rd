@@ -4,10 +4,22 @@
 \alias{r_environment}
 \title{Create an environment}
 \usage{
-r_environment(name, version = NULL, environment_variables = NULL,
-  cran_packages = NULL, github_packages = NULL,
-  custom_url_packages = NULL, custom_docker_image = NULL,
-  image_registry_details = NULL, use_gpu = FALSE, shm_size = NULL)
+r_environment(
+  name,
+  version = NULL,
+  environment_variables = NULL,
+  r_version = NULL,
+  rscript_path = NULL,
+  snapshot_date = NULL,
+  cran_packages = NULL,
+  github_packages = NULL,
+  custom_url_packages = NULL,
+  bioconductor_packages = NULL,
+  custom_docker_image = NULL,
+  image_registry_details = NULL,
+  use_gpu = FALSE,
+  shm_size = NULL
+)
 }
 \arguments{
 \item{name}{A string of the name of the environment.}
@@ -18,12 +30,22 @@ r_environment(name, version = NULL, environment_variables = NULL,
 and values. These environment variables are set on the process where the user
 script is being executed.}
 
-\item{cran_packages}{A character vector of CRAN packages to be installed.}
+\item{r_version}{The version of R to be installed.}
 
-\item{github_packages}{A character vector of GitHub packages to be installed.}
+\item{rscript_path}{The Rscript path to use if an environment build is not required.
+The path specified gets used to call the user script.}
+
+\item{snapshot_date}{Date of MRAN snapshot to use.}
+
+\item{cran_packages}{A list of \code{cran_package} objects to be installed.}
+
+\item{github_packages}{A list of \code{github_package} objects to be installed.}
 
 \item{custom_url_packages}{A character vector of packages to be installed
 from local directory or custom URL.}
+
+\item{bioconductor_packages}{A character vector of packages to be installed
+from Bioconductor.}
 
 \item{custom_docker_image}{A string of the name of the Docker image from
 which the image to use for training or deployment will be built. If not set,
@@ -87,7 +109,7 @@ R \tab 3.6.0 \tab -\cr
 Commonly used R packages \tab - \tab 80+ of the most popular R packages for
 data science, including the IRKernel, dplyr, shiny, ggplot2, tidyr, caret,
 and nnet. For the full list of packages included, see
-\href{https://github.com/Azure/azureml-sdk-for-r/tree/master/misc/r-packages-docker.md}{here}.\cr
+\href{https://github.com/Azure/azureml-sdk-for-r/blob/master/misc/r-packages-docker.md}{here}.\cr
 Python \tab 3.7.0 \tab -\cr
 azureml-defaults \tab latest \tab \code{azureml-defaults} contains the
 \code{azureml-core} and \code{applicationinsights} packages of the Python SDK that

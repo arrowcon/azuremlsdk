@@ -46,9 +46,7 @@ unregister_all_dataset_versions <- function(dataset) {
 #' @export
 #' @md
 get_dataset_by_name <- function(workspace, name, version = "latest") {
-  azureml$data$abstract_dataset$AbstractDataset$get_by_name(workspace,
-                                                            name,
-                                                            version)
+  azureml$core$dataset$Dataset$get_by_name(workspace, name, version)
 }
 
 #' Get Dataset by ID.
@@ -62,7 +60,7 @@ get_dataset_by_name <- function(workspace, name, version = "latest") {
 #' @export
 #' @md
 get_dataset_by_id <- function(workspace, id) {
-  azureml$data$abstract_dataset$AbstractDataset$get_by_id(workspace, id)
+  azureml$core$dataset$Dataset$get_by_id(workspace, id)
 }
 
 #' Return the named list for input datasets.
@@ -93,6 +91,10 @@ get_input_dataset_from_run <- function(name, run = NULL) {
 #' returned dataset. Defaults to True. Validation requires that the data source
 #' is accessible from the current compute.
 #' @return The FileDataset object
+#' @export
+#' @seealso
+#' \code{\link{data_path}}
+#' @md
 create_file_dataset_from_files <- function(path, validate = TRUE) {
   azureml$data$dataset_factory$FileDatasetFactory$from_files(path, validate)
 }
@@ -152,8 +154,8 @@ download_from_file_dataset <- function(dataset, target_path = NULL,
 #' type `azureml.dataprep.fuse.daemon.MountContext`.
 #' @export
 #' @md
-mount_file_dataset <- function(dataset, mount_point) {
-  dataset$mount(mount_point)
+mount_file_dataset <- function(dataset, mount_point = NULL) {
+  dataset$mount(mount_point = mount_point)
 }
 
 #' Skip file streams from the top of the dataset by the specified count.
@@ -239,6 +241,8 @@ random_split_dataset <- function(dataset, percentage, seed = NULL) {
 #' of string type and 'PartitionDate' of datetime type.
 #' @return The Tabular Dataset object.
 #' @export
+#' @seealso
+#' \code{\link{data_path}}
 #' @md
 create_tabular_dataset_from_parquet_files <- function(path, validate = TRUE,
                                                       include_path = FALSE,
@@ -278,16 +282,25 @@ create_tabular_dataset_from_parquet_files <- function(path, validate = TRUE,
 #' @param header Controls how column headers are promoted when reading from files. Defaults to True for all
 #' files having the same header. Files will read as having no header When header=False. More options can
 #' be specified using `PromoteHeadersBehavior`.
+#' @param support_multi_line By default (support_multi_line=FALSE), all line breaks,
+#' including those in quoted field values, will be interpreted as a record break. Reading data this way is
+#' faster and more optimized for parallel execution on multiple CPU cores. However, it may result in silently
+#' producing more records with misaligned field values. This should be set to TRUE when the delimited files
+#' are known to contain quoted line breaks.
+#' @param empty_as_string Specify if empty field values should be loaded as empty strings.
+#' The default (FALSE) will read empty field values as nulls. Passing this as TRUE will read empty
+#' field values as empty strings. If the values are converted to numeric or datetime then this has no effect,
+#' as empty values will be converted to nulls.
 #' @return The Tabular Dataset object.
 #' @export
+#' @seealso
+#' \code{\link{data_path}}
 #' @md
-create_tabular_dataset_from_delimited_files <- function(path, validate = TRUE,
-                                                      include_path = FALSE,
-                                                      infer_column_types = TRUE,
-                                                      set_column_types = NULL,
-                                                      separator = ",",
-                                                      header = TRUE,
-                                                      partition_format = NULL) {
+create_tabular_dataset_from_delimited_files <- function(
+  path, validate = TRUE, include_path = FALSE, infer_column_types = TRUE,
+  set_column_types = NULL, separator = ",", header = TRUE,
+  partition_format = NULL, support_multi_line = FALSE,
+  empty_as_string = FALSE) {
   azureml$core$dataset$Dataset$Tabular$from_delimited_files(path,
                                                             validate,
                                                             include_path,
@@ -295,7 +308,9 @@ create_tabular_dataset_from_delimited_files <- function(path, validate = TRUE,
                                                             set_column_types,
                                                             separator,
                                                             header,
-                                                            partition_format)
+                                                            partition_format,
+                                                            support_multi_line,
+                                                            empty_as_string)
 }
 
 #' Create a TabularDataset to represent tabular data in JSON Lines files (http://jsonlines.org/).
@@ -329,6 +344,8 @@ create_tabular_dataset_from_delimited_files <- function(path, validate = TRUE,
 #' of string type and 'PartitionDate' of datetime type.
 #' @return The Tabular Dataset object.
 #' @export
+#' @seealso
+#' \code{\link{data_path}}
 #' @md
 create_tabular_dataset_from_json_lines_files <- function(
                                                       path,
@@ -360,13 +377,37 @@ create_tabular_dataset_from_json_lines_files <- function(
 #' the current compute.
 #' @param set_column_types A named list to set column data type, where key is
 #' column name and value is data type.
-#' @return The Tabular Dataset object
+#' @param query_timeout Sets the wait time (as an int, in seconds) before terminating the attempt to execute a command
+#' and generating an error. The default is 30 seconds.
+#' @return A `TabularDataset` object
 #' @export
+#' @section Examples:
+#' ```
+#' # create tabular dataset from a SQL database in datastore
+#' datastore <- get_datastore(ws, 'sql-db')
+#' query <- data_path(datastore, 'SELECT * FROM my_table')
+#' tab_ds <- create_tabular_dataset_from_sql_query(query, query_timeout = 10)
+#'
+#' # use `set_column_types` param to set column data types
+#' data_types <- list(ID = data_type_string(),
+#'                    Date = data_type_datetime('%d/%m/%Y %I:%M:%S %p'),
+#'                    Count = data_type_long(),
+#'                    Latitude = data_type_double(),
+#'                    Found = data_type_bool())
+#'
+#' set_tab_ds <- create_tabular_dataset_from_sql_query(query, set_column_types = data_types)
+
+#' ```
+#' @seealso [data_path()] [data_type_datetime()] [data_type_bool()]
+#' [data_type_double()] [data_type_string()] [data_type_long()]
 #' @md
 create_tabular_dataset_from_sql_query <- function(query, validate = TRUE,
-                                                  set_column_types = NULL) {
-  azureml$core$dataset$Dataset$Tabular$from_sql_query(query, validate,
-                                                      set_column_types)
+                                                  set_column_types = NULL,
+                                                  query_timeout = 30L) {
+  azureml$core$dataset$Dataset$Tabular$from_sql_query(query = query,
+                                      validate = validate,
+                                      set_column_types = set_column_types,
+                                      query_timeout = as.integer(query_timeout))
 }
 
 #' Drop the specified columns from the dataset.
@@ -504,11 +545,19 @@ define_timestamp_columns_for_dataset <- function(dataset, fine_grain_timestamp,
 #' Load all records from the dataset into a dataframe.
 #'
 #' @param dataset The Tabular Dataset object.
-#' @return A dataframe.
+#' @param on_error How to handle any error values in the dataset, such as those
+#' produced by an error while parsing values. Valid values are 'null' which replaces
+#' them with NULL; and 'fail' which will result in an exception.
+#' @param out_of_range_datetime How to handle date-time values that are outside
+#' the range supported by Pandas. Valid values are 'null' which replaces them with
+#' NULL; and 'fail' which will result in an exception.
+#' @return A data.frame.
 #' @export
 #' @md
-load_dataset_into_data_frame <- function(dataset)	{
-  dataset$to_pandas_data_frame()
+load_dataset_into_data_frame <- function(dataset, on_error = "null",
+                                         out_of_range_datetime = "null")	{
+  dataset$to_pandas_dataframe(on_error = on_error,
+                              out_of_range_datetime = out_of_range_datetime)
 }
 
 #' Convert the current dataset into a FileDataset containing CSV files.
@@ -639,4 +688,78 @@ data_type_string <- function() {
 promote_headers_behavior <- function(option) {
   option <- as.integer(option)
   azureml$data$dataset_type_definitions$PromoteHeadersBehavior(option)
+}
+
+#' Represents a path to data in a datastore.
+#'
+#' @description
+#' The path represented by DataPath object can point to a directory or a data artifact (blob, file).
+#'
+#' @param datastore The Datastore to reference.
+#' @param path_on_datastore The relative path in the backing storage for the data reference.
+#' @param name An optional name for the DataPath.
+#' @return The `DataPath` object.
+#' @export
+#' @section Examples:
+#' ```
+#' my_data <- register_azure_blob_container_datastore(
+#'     workspace = ws,
+#'     datastore_name = blob_datastore_name,
+#'     container_name = ws_blob_datastore$container_name,
+#'     account_name = ws_blob_datastore$account_name,
+#'     account_key = ws_blob_datastore$account_key,
+#'     create_if_not_exists = TRUE)
+#'
+#' datapath <- data_path(my_data, <path_on_my_datastore>)
+#' dataset <- create_file_dataset_from_files(datapath)
+#' ```
+#' @seealso
+#' \code{\link{create_file_dataset_from_files}}
+#' \code{\link{create_tabular_dataset_from_parquet_files}}
+#' \code{\link{create_tabular_dataset_from_delimited_files}}
+#' \code{\link{create_tabular_dataset_from_json_lines_files}}
+#' \code{\link{create_tabular_dataset_from_sql_query}}
+#' @md
+data_path <- function(datastore, path_on_datastore = NULL, name = NULL) {
+  azureml$data$datapath$DataPath(datastore = datastore,
+                                 path_on_datastore = path_on_datastore,
+                                 name = name)
+}
+
+#' Represent how to deliver the dataset to a compute target.
+#'
+#' @description
+#' Represent how to deliver the dataset to a compute target.
+#'
+#' @param name The name of the dataset in the run, which can be different to the
+#' registered name. The name will be registered as environment variable and can
+#' be used in data plane.
+#' @param dataset The dataset that will be consumed in the run.
+#' @param mode Defines how the dataset should be delivered to the compute target. There are three modes:
+#'
+#' 'direct': consume the dataset as dataset.
+#' 'download': download the dataset and consume the dataset as downloaded path.
+#' 'mount': mount the dataset and consume the dataset as mount path.
+#' @param path_on_compute The target path on the compute to make the data available at.
+#' The folder structure of the source data will be kept, however, we might add prefixes
+#' to this folder structure to avoid collision.
+#' @return The `DatasetConsumptionConfig` object.
+#' @export
+#' @section Examples:
+#' ```
+#' est <- estimator(source_directory = ".",
+#'                  entry_script = "train.R",
+#'                  inputs = list(dataset_consumption_config('mydataset', dataset, mode = 'download')),
+#'                  compute_target = compute_target)
+#' ```
+#' @seealso
+#' \code{\link{estimator}}
+#' @md
+dataset_consumption_config <- function(name, dataset, mode = "direct",
+                                       path_on_compute = NULL) {
+  azureml$data$dataset_consumption_config$DatasetConsumptionConfig(
+    name = name,
+    dataset = dataset,
+    mode = mode,
+    path_on_compute = path_on_compute)
 }

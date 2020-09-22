@@ -4,9 +4,13 @@
 \alias{create_tabular_dataset_from_json_lines_files}
 \title{Create a TabularDataset to represent tabular data in JSON Lines files (http://jsonlines.org/).}
 \usage{
-create_tabular_dataset_from_json_lines_files(path, validate = TRUE,
-  include_path = FALSE, set_column_types = NULL,
-  partition_format = NULL)
+create_tabular_dataset_from_json_lines_files(
+  path,
+  validate = TRUE,
+  include_path = FALSE,
+  set_column_types = NULL,
+  partition_format = NULL
+)
 }
 \arguments{
 \item{path}{The path to the source files, which can be single value or list
@@ -43,4 +47,7 @@ by Azure Machine Learning, the JSON Lines files specified by \code{path} must be
 a Datastore or behind public web urls. Column data types are read from data types saved
 in the JSON Lines files. Providing `set_column_types` will override the data type
 for the specified columns in the returned Tabular Dataset.
+}
+\seealso{
+\code{\link{data_path}}
 }

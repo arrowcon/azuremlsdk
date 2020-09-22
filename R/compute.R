@@ -19,7 +19,7 @@
 #' @param workspace The `Workspace` object.
 #' @param cluster_name A string of the name of the cluster.
 #' @param vm_size A string of the size of agent VMs. More details can be found
-#' [here](https://aka.ms/azureml-vm-details).
+#' [here](https://docs.microsoft.com/en-us/azure/templates/microsoft.compute/2019-12-01/virtualmachines#virtualmachineidentity-object).
 #' Note that not all sizes are available in all regions, as detailed in the
 #' aformentioned link. Defaults to `'Standard_NC6'`.
 #' @param vm_priority A string of either `'dedicated'` or `'lowpriority'` to
@@ -213,7 +213,7 @@ list_nodes_in_aml_compute <- function(cluster) {
 #' @param agent_count An integer of the number of agents (VMs) to host
 #' containers. Defaults to `3`.
 #' @param vm_size A string of the size of agent VMs. More details can be found
-#' [here](https://aka.ms/azureml-vm-details).
+#' [here](https://docs.microsoft.com/en-us/azure/templates/microsoft.compute/2019-12-01/virtualmachines#virtualmachineidentity-object).
 #' Note that not all sizes are available in all regions, as detailed in the
 #' aformentioned link. Defaults to `'Standard_D3_v2'`.
 #' @param ssl_cname A string of a CName to use if enabling SSL validation on
@@ -237,20 +237,27 @@ list_nodes_in_aml_compute <- function(cluster) {
 #' service cluster IPs.
 #' @param dns_service_ip A string of the container's DNS server IP address.
 #' @param docker_bridge_cidr A string of a CIDR notation IP for Docker bridge.
+#' @param cluster_purpose A string describing targeted usage of the cluster.
+#' This is used to provision Azure Machine Learning components to ensure the desired level of fault-tolerance and QoS.
+#' 'FastProd' will provision components to handle higher levels of traffic with production quality fault-tolerance. This will default the AKS cluster to have 3 nodes.
+#' 'DevTest' will provision components at a minimal level for testing. This will default the AKS cluster to have 1 node.
+#' 'FastProd'is the default value.
 #' @return An `AksCompute` object.
 #' @export
 #' @section Details:
 #' For more information on using an AksCompute resource within a virtual
 #' network, see
 #' [Secure Azure ML experimentation and inference jobs within an Azure Virtual Network](https://docs.microsoft.com/en-us/azure/machine-learning/service/how-to-enable-virtual-network#use-azure-kubernetes-service-aks).
-#' @examples
+#' @section Examples:
+#' ```r
 #' # Create an AksCompute cluster using the default configuration (you can also
 #' # provide parameters to customize this)
-#' \dontrun{
+#'
 #' ws <- load_workspace_from_config()
+#'
 #' compute_target <- create_aks_compute(ws, cluster_name = 'mycluster')
 #' wait_for_provisioning_completion(compute_target)
-#' }
+#' ```
 #' @md
 create_aks_compute <- function(workspace,
                                cluster_name,
@@ -265,7 +272,11 @@ create_aks_compute <- function(workspace,
                                subnet_name = NULL,
                                service_cidr = NULL,
                                dns_service_ip = NULL,
-                               docker_bridge_cidr = NULL) {
+                               docker_bridge_cidr = NULL,
+                               cluster_purpose = c("FastProd", "DevTest")) {
+
+  cluster_purpose <- match.arg(cluster_purpose)
+
   compute_config <- azureml$core$compute$AksCompute$provisioning_configuration(
     agent_count = agent_count,
     vm_size = vm_size,
@@ -278,7 +289,8 @@ create_aks_compute <- function(workspace,
     subnet_name = subnet_name,
     service_cidr = service_cidr,
     dns_service_ip = dns_service_ip,
-    docker_bridge_cidr = docker_bridge_cidr)
+    docker_bridge_cidr = docker_bridge_cidr,
+    cluster_purpose = cluster_purpose)
 
   azureml$core$compute$ComputeTarget$create(workspace,
                                             cluster_name,
@@ -288,14 +300,13 @@ create_aks_compute <- function(workspace,
 #' Get the credentials for an AksCompute cluster
 #'
 #' @description
-#' Retrieved the credentials for an AksCompute cluster.
+#' Retrieve the credentials for an AksCompute cluster.
 #' @param cluster The `AksCompute` object.
-#' @return Details of the cluster credentials as data frame.
+#' @return Named list of the cluster details.
 #' @export
 #' @md
 get_aks_compute_credentials <- function(cluster) {
-  creds <- cluster$get_credentials()
-  as.data.frame(creds)
+  cluster$get_credentials()
 }
 
 #' Attach an existing AKS cluster to a workspace
@@ -309,29 +320,43 @@ get_aks_compute_credentials <- function(cluster) {
 #' If you want to secure your AKS cluster using an Azure Virtual Network, you
 #' must create the virtual network first. For more information, see
 #' [Secure Azure ML experimentation and inference jobs within an Azure Virtual Network](https://docs.microsoft.com/en-us/azure/machine-learning/service/how-to-enable-virtual-network#aksvnet)
+#'
+#' If you want to re-attach an AKS cluster, for example to to change SSL or other
+#' cluster configuration settings, you must first remove the existing attachment
+#' with `detach_aks_compute()`.
+#'
+#' Attaching a cluster will take approximately 5 minutes.
 #' @param workspace The `Workspace` object to attach the AKS cluster to.
-#' @param cluster_name A string of the name for the cluster.
-#' @param resource_id A string of the resource ID for the AKS cluster being
-#' attached.
 #' @param resource_group A string of the resource group in which the AKS cluster
 #' is located.
+#' @param cluster_name A string of the name of the AKS cluster.
+#' @param cluster_purpose The targeted usage of the cluster. The possible values are
+#' "DevTest" or "FastProd". This is used to provision Azure Machine Learning components
+#' to ensure the desired level of fault-tolerance and QoS. If your cluster has less
+#' than 12 virtual CPUs, you will need to specify "DevTest" for this argument. We
+#' recommend that your cluster have at least 2 virtual CPUs for dev/test usage.
 #' @return The `AksCompute` object.
 #' @export
-#' @examples
-#' \dontrun{
+#' @section Examples:
+#' ```r
 #' ws <- load_workspace_from_config()
 #' compute_target <- attach_aks_compute(ws,
-#'                                      cluster_name = 'mycluster',
-#'                                      resource_id = 'myresourceid',
-#'                                      resource_group = 'myresourcegroup')
-#' }
+#'                                      resource_group = 'myresourcegroup',
+#'                                      cluster_name = 'myakscluster')
+#' ```
+#'
+#' If the cluster has less than 12 virtual CPUs, you will need to also specify the
+#' `cluster_purpose` parameter in the `attach_aks_compute()` call: `cluster_purpose = 'DevTest'`.
+#' @seealso
+#' `detach_aks_compute()`
 #' @md
 attach_aks_compute <- function(workspace,
+                               resource_group,
                                cluster_name,
-                               resource_id = NULL,
-                               resource_group = NULL) {
+                               cluster_purpose = c("FastProd", "DevTest")) {
+  cluster_purpose <- match.arg(cluster_purpose)
   attach_config <- azureml$core$compute$AksCompute$attach_configuration(
-    resource_group = resource_group, resource_id = resource_id)
+    resource_group = resource_group, cluster_name = cluster_name, cluster_purpose = cluster_purpose)
 
   azureml$core$compute$ComputeTarget$attach(workspace,
                                             cluster_name,

@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+<meta name="author" content="David Smith" />
+
+<meta name="date" content="2020-09-16" />
+
+<title>Train and deploy your first model with Azure ML</title>
+
+<script>// Hide empty <a> tag within highlighted CodeBlock for screen reader accessibility (see https://github.com/jgm/pandoc/issues/6352#issuecomment-626106786) -->
+// v0.0.1
+// Written by JooYoung Seo (jooyoung@psu.edu) and Atsushi Yasumoto on June 1st, 2020.
+
+document.addEventListener('DOMContentLoaded', function() {
+  const codeList = document.getElementsByClassName("sourceCode");
+  for (var i = 0; i < codeList.length; i++) {
+    var linkList = codeList[i].getElementsByTagName('a');
+    for (var j = 0; j < linkList.length; j++) {
+      if (linkList[j].innerHTML === "") {
+        linkList[j].setAttribute('aria-hidden', 'true');
+      }
+    }
+  }
+});
+</script>
+
+
+<style type="text/css">code{white-space: pre;}</style>
+<style type="text/css" data-origin="pandoc">
+code.sourceCode > span { display: inline-block; line-height: 1.25; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode { white-space: pre; position: relative; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+code.sourceCode { white-space: pre-wrap; }
+code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+    color: #aaaaaa;
+  }
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code span.at { color: #7d9029; } /* Attribute */
+code span.bn { color: #40a070; } /* BaseN */
+code span.bu { } /* BuiltIn */
+code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code span.ch { color: #4070a0; } /* Char */
+code span.cn { color: #880000; } /* Constant */
+code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code span.dt { color: #902000; } /* DataType */
+code span.dv { color: #40a070; } /* DecVal */
+code span.er { color: #ff0000; font-weight: bold; } /* Error */
+code span.ex { } /* Extension */
+code span.fl { color: #40a070; } /* Float */
+code span.fu { color: #06287e; } /* Function */
+code span.im { } /* Import */
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code span.op { color: #666666; } /* Operator */
+code span.ot { color: #007020; } /* Other */
+code span.pp { color: #bc7a00; } /* Preprocessor */
+code span.sc { color: #4070a0; } /* SpecialChar */
+code span.ss { color: #bb6688; } /* SpecialString */
+code span.st { color: #4070a0; } /* String */
+code span.va { color: #19177c; } /* Variable */
+code span.vs { color: #4070a0; } /* VerbatimString */
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    for (var j = 0; j < rules.length; j++) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") continue;
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') continue;
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; } 
+code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">Train and deploy your first model with Azure ML</h1>
+<h4 class="author">David Smith</h4>
+<h4 class="date">2020-09-16</h4>
+
+
+
+<p>In this tutorial, you learn the foundational design patterns in Azure Machine Learning. You’ll train and deploy a Generalized Linear Model to predict the likelihood of a fatality in an automobile accident. After completing this tutorial, you’ll have the practical knowledge of the R SDK to scale up to developing more-complex experiments and workflows.</p>
+<p>In this tutorial, you learn the following tasks:</p>
+<ul>
+<li>Connect your workspace</li>
+<li>Load data and prepare for training</li>
+<li>Upload data to the datastore so it is available for remote training</li>
+<li>Create a compute resource</li>
+<li>Train a caret model to predict probability of fatality</li>
+<li>Deploy a prediction endpoint</li>
+<li>Test the model from R</li>
+</ul>
+<div id="prerequisites" class="section level2">
+<h2>Prerequisites</h2>
+<p>If you don’t have access to an Azure ML workspace, follow the <a href="https://azure.github.io/azureml-sdk-for-r/articles/configuration.html">setup tutorial</a> to configure and create a workspace.</p>
+</div>
+<div id="set-up-your-development-environment" class="section level2">
+<h2>Set up your development environment</h2>
+<p>The setup for your development work in this tutorial includes the following actions:</p>
+<ul>
+<li>Install required packages</li>
+<li>Connect to a workspace, so that your local computer can communicate with remote resources</li>
+<li>Create an experiment to track your runs</li>
+<li>Create a remote compute target to use for training</li>
+</ul>
+<p>To run this notebook in an Azure ML Compute Instance, visit the <a href="https://ml.azure.com">Azure Machine Learning studio</a> and browse to Notebooks &gt; Samples &gt; Azure ML gallery &gt; Samples &gt; R &gt; <version> &gt; vignettes. Click the “…” icon next to vignettes and chose “clone”. Launch RStudio Server from the link in the “Compute” tab. In RStudio, select “File &gt; New Project &gt; Existing Directory” and browse to the cloned “Vignettes” folder.</p>
+<div id="install-required-packages" class="section level3">
+<h3>Install required packages</h3>
+<p>This tutorial assumes you already have the Azure ML SDK installed. (If you are running this vignette from an RStudio instance in an Azure ML Compute Instance, the package is already installed for you.) Go ahead and load the <strong>azuremlsdk</strong> package.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1"></a><span class="kw">library</span>(azuremlsdk)</span></code></pre></div>
+<p>The training and scoring scripts (<code>accidents.R</code> and <code>accident_predict.R</code>) have some additional dependencies. If you plan on running those scripts locally, make sure you have those required packages as well.</p>
+</div>
+<div id="load-your-workspace" class="section level3">
+<h3>Load your workspace</h3>
+<p>Instantiate a workspace object from your existing workspace. The following code will load the workspace details from the <strong>config.json</strong> file. You can also retrieve a workspace using <a href="https://azure.github.io/azureml-sdk-for-r/reference/get_workspace.html"><code>get_workspace()</code></a>.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1"></a>ws &lt;-<span class="st"> </span><span class="kw">load_workspace_from_config</span>()</span></code></pre></div>
+</div>
+<div id="create-an-experiment" class="section level3">
+<h3>Create an experiment</h3>
+<p>An Azure ML experiment tracks a grouping of runs, typically from the same training script. Create an experiment to track the runs for training the caret model on the accidents data.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1"></a>experiment_name &lt;-<span class="st"> &quot;accident-logreg&quot;</span></span>
+<span id="cb3-2"><a href="#cb3-2"></a>exp &lt;-<span class="st"> </span><span class="kw">experiment</span>(ws, experiment_name)</span></code></pre></div>
+</div>
+<div id="create-a-compute-target" class="section level3">
+<h3>Create a compute target</h3>
+<p>By using Azure Machine Learning Compute (AmlCompute), a managed service, data scientists can train machine learning models on clusters of Azure virtual machines. Examples include VMs with GPU support. In this tutorial, you create a single-node AmlCompute cluster as your training environment. The code below creates the compute cluster for you if it doesn’t already exist in your workspace.</p>
+<p>You may need to wait a few minutes for your compute cluster to be provisioned if it doesn’t already exist.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1"></a>cluster_name &lt;-<span class="st"> &quot;rcluster&quot;</span></span>
+<span id="cb4-2"><a href="#cb4-2"></a>compute_target &lt;-<span class="st"> </span><span class="kw">get_compute</span>(ws, <span class="dt">cluster_name =</span> cluster_name)</span>
+<span id="cb4-3"><a href="#cb4-3"></a><span class="cf">if</span> (<span class="kw">is.null</span>(compute_target)) {</span>
+<span id="cb4-4"><a href="#cb4-4"></a>  vm_size &lt;-<span class="st"> &quot;STANDARD_D2_V2&quot;</span> </span>
+<span id="cb4-5"><a href="#cb4-5"></a>  compute_target &lt;-<span class="st"> </span><span class="kw">create_aml_compute</span>(<span class="dt">workspace =</span> ws,</span>
+<span id="cb4-6"><a href="#cb4-6"></a>                                       <span class="dt">cluster_name =</span> cluster_name,</span>
+<span id="cb4-7"><a href="#cb4-7"></a>                                       <span class="dt">vm_size =</span> vm_size,</span>
+<span id="cb4-8"><a href="#cb4-8"></a>                                       <span class="dt">min_nodes =</span> <span class="dv">1</span>,</span>
+<span id="cb4-9"><a href="#cb4-9"></a>                                       <span class="dt">max_nodes =</span> <span class="dv">2</span>)</span>
+<span id="cb4-10"><a href="#cb4-10"></a>  </span>
+<span id="cb4-11"><a href="#cb4-11"></a>  <span class="kw">wait_for_provisioning_completion</span>(compute_target, <span class="dt">show_output =</span> <span class="ot">TRUE</span>)</span>
+<span id="cb4-12"><a href="#cb4-12"></a>}</span></code></pre></div>
+<p>This cluster has a maximum size of two nodes, but only one will be provisioned for now. The second will only be provisioned as needed, and will automatically de-provision when no longer in use. You can even set <code>min_nodes=0</code> to make the first node provision on demand as well (and experiments will wait for the node to provision before starting).</p>
+</div>
+</div>
+<div id="prepare-data-for-training" class="section level2">
+<h2>Prepare data for training</h2>
+<p>This tutorial uses data from the US <a href="https://cdan.nhtsa.gov/tsftables/tsfar.htm">National Highway Traffic Safety Administration</a><br />
+(with thanks to <a href="https://www.stat.colostate.edu/~meyer/airbags.htm">Mary C. Meyer and Tremika Finney</a>). This dataset includes data from over 25,000 car crashes in the US, with variables you can use to predict the likelihood of a fatality. First, import the data into R and transform it into a new dataframe <code>accidents</code> for analysis, and export it to an <code>Rdata</code> file.</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1"></a>nassCDS &lt;-<span class="st"> </span><span class="kw">read.csv</span>(<span class="st">&quot;train-and-deploy-first-model/nassCDS.csv&quot;</span>, </span>
+<span id="cb5-2"><a href="#cb5-2"></a>                     <span class="dt">colClasses=</span><span class="kw">c</span>(<span class="st">&quot;factor&quot;</span>,<span class="st">&quot;numeric&quot;</span>,<span class="st">&quot;factor&quot;</span>,</span>
+<span id="cb5-3"><a href="#cb5-3"></a>                                  <span class="st">&quot;factor&quot;</span>,<span class="st">&quot;factor&quot;</span>,<span class="st">&quot;numeric&quot;</span>,</span>
+<span id="cb5-4"><a href="#cb5-4"></a>                                  <span class="st">&quot;factor&quot;</span>,<span class="st">&quot;numeric&quot;</span>,<span class="st">&quot;numeric&quot;</span>,</span>
+<span id="cb5-5"><a href="#cb5-5"></a>                                  <span class="st">&quot;numeric&quot;</span>,<span class="st">&quot;character&quot;</span>,<span class="st">&quot;character&quot;</span>,</span>
+<span id="cb5-6"><a href="#cb5-6"></a>                                  <span class="st">&quot;numeric&quot;</span>,<span class="st">&quot;numeric&quot;</span>,<span class="st">&quot;character&quot;</span>))</span>
+<span id="cb5-7"><a href="#cb5-7"></a></span>
+<span id="cb5-8"><a href="#cb5-8"></a>accidents &lt;-<span class="st"> </span><span class="kw">na.omit</span>(nassCDS[,<span class="kw">c</span>(<span class="st">&quot;dead&quot;</span>,<span class="st">&quot;dvcat&quot;</span>,<span class="st">&quot;seatbelt&quot;</span>,<span class="st">&quot;frontal&quot;</span>,<span class="st">&quot;sex&quot;</span>,<span class="st">&quot;ageOFocc&quot;</span>,<span class="st">&quot;yearVeh&quot;</span>,<span class="st">&quot;airbag&quot;</span>,<span class="st">&quot;occRole&quot;</span>)])</span>
+<span id="cb5-9"><a href="#cb5-9"></a>accidents<span class="op">$</span>frontal &lt;-<span class="st"> </span><span class="kw">factor</span>(accidents<span class="op">$</span>frontal, <span class="dt">labels=</span><span class="kw">c</span>(<span class="st">&quot;notfrontal&quot;</span>,<span class="st">&quot;frontal&quot;</span>))</span>
+<span id="cb5-10"><a href="#cb5-10"></a>accidents<span class="op">$</span>occRole &lt;-<span class="st"> </span><span class="kw">factor</span>(accidents<span class="op">$</span>occRole)</span>
+<span id="cb5-11"><a href="#cb5-11"></a>accidents<span class="op">$</span>dvcat &lt;-<span class="st"> </span><span class="kw">ordered</span>(accidents<span class="op">$</span>dvcat, </span>
+<span id="cb5-12"><a href="#cb5-12"></a>                          <span class="dt">levels=</span><span class="kw">c</span>(<span class="st">&quot;1-9km/h&quot;</span>,<span class="st">&quot;10-24&quot;</span>,<span class="st">&quot;25-39&quot;</span>,<span class="st">&quot;40-54&quot;</span>,<span class="st">&quot;55+&quot;</span>))</span>
+<span id="cb5-13"><a href="#cb5-13"></a></span>
+<span id="cb5-14"><a href="#cb5-14"></a><span class="kw">saveRDS</span>(accidents, <span class="dt">file=</span><span class="st">&quot;accidents.Rd&quot;</span>)</span></code></pre></div>
+<div id="upload-data-to-the-datastore" class="section level3">
+<h3>Upload data to the datastore</h3>
+<p>Upload data to the cloud so that it can be access by your remote training environment. Each Azure ML workspace comes with a default datastore that stores the connection information to the Azure blob container that is provisioned in the storage account attached to the workspace. The following code will upload the accidents data you created above to that datastore.</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1"></a>ds &lt;-<span class="st"> </span><span class="kw">get_default_datastore</span>(ws)</span>
+<span id="cb6-2"><a href="#cb6-2"></a></span>
+<span id="cb6-3"><a href="#cb6-3"></a>target_path &lt;-<span class="st"> &quot;accidentdata&quot;</span></span>
+<span id="cb6-4"><a href="#cb6-4"></a><span class="kw">upload_files_to_datastore</span>(ds,</span>
+<span id="cb6-5"><a href="#cb6-5"></a>                          <span class="kw">list</span>(<span class="st">&quot;./accidents.Rd&quot;</span>),</span>
+<span id="cb6-6"><a href="#cb6-6"></a>                          <span class="dt">target_path =</span> target_path,</span>
+<span id="cb6-7"><a href="#cb6-7"></a>                          <span class="dt">overwrite =</span> <span class="ot">TRUE</span>)</span></code></pre></div>
+</div>
+</div>
+<div id="train-a-model" class="section level2">
+<h2>Train a model</h2>
+<p>For this tutorial, fit a logistic regression model on your uploaded data using your remote compute cluster. To submit a job, you need to:</p>
+<ul>
+<li>Prepare the training script</li>
+<li>Create an estimator</li>
+<li>Submit the job</li>
+</ul>
+<div id="prepare-the-training-script" class="section level3">
+<h3>Prepare the training script</h3>
+<p>A training script called <code>accidents.R</code> has been provided for you in the <code>train-and-deploy-first-model</code> folder. Notice the following details <strong>inside the training script</strong> that have been done to leverage the Azure ML service for training:</p>
+<ul>
+<li>The training script takes an argument <code>-d</code> to find the directory that contains the training data. When you define and submit your job later, you point to the datastore for this argument. Azure ML will mount the storage folder to the remote cluster for the training job.</li>
+<li>The training script logs the final accuracy as a metric to the run record in Azure ML using <code>log_metric_to_run()</code>. The Azure ML SDK provides a set of logging APIs for logging various metrics during training runs. These metrics are recorded and persisted in the experiment run record. The metrics can then be accessed at any time or viewed in the run details page in <a href="http://ml.azure.com">Azure Machine Learning studio</a>. See the <a href="https://azure.github.io/azureml-sdk-for-r/reference/index.html#section-training-experimentation">reference</a> for the full set of logging methods <code>log_*()</code>.</li>
+<li>The training script saves your model into a directory named <strong>outputs</strong>. The <code>./outputs</code> folder receives special treatment by Azure ML. During training, files written to <code>./outputs</code> are automatically uploaded to your run record by Azure ML and persisted as artifacts. By saving the trained model to <code>./outputs</code>, you’ll be able to access and retrieve your model file even after the run is over and you no longer have access to your remote training environment.</li>
+</ul>
+</div>
+<div id="create-an-estimator" class="section level3">
+<h3>Create an estimator</h3>
+<p>An Azure ML estimator encapsulates the run configuration information needed for executing a training script on the compute target. Azure ML runs are run as containerized jobs on the specified compute target. By default, the Docker image built for your training job will include R, the Azure ML SDK, and a set of commonly used R packages. See the full list of default packages included <a href="https://azure.github.io/azureml-sdk-for-r/reference/r_environment.html">here</a>.</p>
+<p>To create the estimator, define:</p>
+<ul>
+<li>The directory that contains your scripts needed for training (<code>source_directory</code>). All the files in this directory are uploaded to the cluster node(s) for execution. The directory must contain your training script and any additional scripts required.</li>
+<li>The training script that will be executed (<code>entry_script</code>).</li>
+<li>The compute target (<code>compute_target</code>), in this case the AmlCompute cluster you created earlier.</li>
+<li>The parameters required from the training script (<code>script_params</code>). Azure ML will run your training script as a command-line script with <code>Rscript</code>. In this tutorial you specify one argument to the script, the data directory mounting point, which you can access with <code>ds$path(target_path)</code>.</li>
+<li>Any environment dependencies required for training. The default Docker image built for training already contains the three packages (<code>caret</code>, <code>e1071</code>, and <code>optparse</code>) needed in the training script. So you don’t need to specify additional information. If you are using R packages that are not included by default, use the estimator’s <code>cran_packages</code> parameter to add additional CRAN packages. See the <a href="https://azure.github.io/azureml-sdk-for-r/reference/estimator.html"><code>estimator()</code></a> reference for the full set of configurable options.</li>
+</ul>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1"></a>est &lt;-<span class="st"> </span><span class="kw">estimator</span>(<span class="dt">source_directory =</span> <span class="st">&quot;train-and-deploy-first-model&quot;</span>,</span>
+<span id="cb7-2"><a href="#cb7-2"></a>                 <span class="dt">entry_script =</span> <span class="st">&quot;accidents.R&quot;</span>,</span>
+<span id="cb7-3"><a href="#cb7-3"></a>                 <span class="dt">script_params =</span> <span class="kw">list</span>(<span class="st">&quot;--data_folder&quot;</span> =<span class="st"> </span>ds<span class="op">$</span><span class="kw">path</span>(target_path)),</span>
+<span id="cb7-4"><a href="#cb7-4"></a>                 <span class="dt">compute_target =</span> compute_target</span>
+<span id="cb7-5"><a href="#cb7-5"></a>                 )</span></code></pre></div>
+</div>
+<div id="submit-the-job-on-the-remote-cluster" class="section level3">
+<h3>Submit the job on the remote cluster</h3>
+<p>Finally submit the job to run on your cluster. <code>submit_experiment()</code> returns a Run object that you then use to interface with the run. In total, the first run takes <strong>about 10 minutes</strong>. But for later runs, the same Docker image is reused as long as the script dependencies don’t change. In this case, the image is cached and the container startup time is much faster.</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1"></a>run &lt;-<span class="st"> </span><span class="kw">submit_experiment</span>(exp, est)</span></code></pre></div>
+<p>You can view a table of the run’s details. Clicking the “Web View” link provided will bring you to Azure Machine Learning studio, where you can monitor the run in the UI.</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1"></a><span class="kw">plot_run_details</span>(run)</span></code></pre></div>
+<p>Model training happens in the background. Wait until the model has finished training before you run more code.</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1"></a><span class="kw">wait_for_run_completion</span>(run, <span class="dt">show_output =</span> <span class="ot">TRUE</span>)</span></code></pre></div>
+<p>You – and colleagues with access to the workspace – can submit multiple experiments in parallel, and Azure ML will take of scheduling the tasks on the compute cluster. You can even configure the cluster to automatically scale up to multiple nodes, and scale back when there are no more compute tasks in the queue. This configuration is a cost-effective way for teams to share compute resources.</p>
+</div>
+</div>
+<div id="retrieve-training-results" class="section level2">
+<h2>Retrieve training results</h2>
+<p>Once your model has finished training, you can access the artifacts of your job that were persisted to the run record, including any metrics logged and the final trained model.</p>
+<div id="get-the-logged-metrics" class="section level3">
+<h3>Get the logged metrics</h3>
+<p>In the training script <code>accidents.R</code>, you logged a metric from your model: the accuracy of the predictions in the training data. You can see metrics in the <a href="https://ml.azure.com">studio</a>, or extract them to the local session as an R list as follows:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1"></a>metrics &lt;-<span class="st"> </span><span class="kw">get_run_metrics</span>(run)</span>
+<span id="cb11-2"><a href="#cb11-2"></a>metrics</span></code></pre></div>
+<p>If you’ve run multiple experiments (say, using differing variables, algorithms, or hyperparamers), you can use the metrics from each run to compare and choose the model you’ll use in production.</p>
+</div>
+<div id="get-the-trained-model" class="section level3">
+<h3>Get the trained model</h3>
+<p>You can retrieve the trained model and look at the results in your local R session. The following code will download the contents of the <code>./outputs</code> directory, which includes the model file.</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1"></a><span class="kw">download_files_from_run</span>(run, <span class="dt">prefix=</span><span class="st">&quot;outputs/&quot;</span>)</span>
+<span id="cb12-2"><a href="#cb12-2"></a>accident_model &lt;-<span class="st"> </span><span class="kw">readRDS</span>(<span class="st">&quot;outputs/model.rds&quot;</span>)</span>
+<span id="cb12-3"><a href="#cb12-3"></a><span class="kw">summary</span>(accident_model)</span></code></pre></div>
+<p>You see some factors that contribute to an increase in the estimated probability of death:</p>
+<ul>
+<li>higher impact speed</li>
+<li>male driver</li>
+<li>older occupant</li>
+<li>passenger</li>
+</ul>
+<p>You see lower probabilities of death with:</p>
+<ul>
+<li>presence of airbags</li>
+<li>presence seatbelts</li>
+<li>frontal collision</li>
+</ul>
+<p>The vehicle year of manufacture does not have a significant effect.</p>
+<p>You can use this model to make new predictions:</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1"></a>newdata &lt;-<span class="st"> </span><span class="kw">data.frame</span>( <span class="co"># valid values shown below</span></span>
+<span id="cb13-2"><a href="#cb13-2"></a> <span class="dt">dvcat=</span><span class="st">&quot;10-24&quot;</span>,        <span class="co"># &quot;1-9km/h&quot; &quot;10-24&quot;   &quot;25-39&quot;   &quot;40-54&quot;   &quot;55+&quot;  </span></span>
+<span id="cb13-3"><a href="#cb13-3"></a> <span class="dt">seatbelt=</span><span class="st">&quot;none&quot;</span>,      <span class="co"># &quot;none&quot;   &quot;belted&quot;  </span></span>
+<span id="cb13-4"><a href="#cb13-4"></a> <span class="dt">frontal=</span><span class="st">&quot;frontal&quot;</span>,    <span class="co"># &quot;notfrontal&quot; &quot;frontal&quot;</span></span>
+<span id="cb13-5"><a href="#cb13-5"></a> <span class="dt">sex=</span><span class="st">&quot;f&quot;</span>,              <span class="co"># &quot;f&quot; &quot;m&quot;</span></span>
+<span id="cb13-6"><a href="#cb13-6"></a> <span class="dt">ageOFocc=</span><span class="dv">16</span>,          <span class="co"># age in years, 16-97</span></span>
+<span id="cb13-7"><a href="#cb13-7"></a> <span class="dt">yearVeh=</span><span class="dv">2002</span>,         <span class="co"># year of vehicle, 1955-2003</span></span>
+<span id="cb13-8"><a href="#cb13-8"></a> <span class="dt">airbag=</span><span class="st">&quot;none&quot;</span>,        <span class="co"># &quot;none&quot;   &quot;airbag&quot;   </span></span>
+<span id="cb13-9"><a href="#cb13-9"></a> <span class="dt">occRole=</span><span class="st">&quot;pass&quot;</span>        <span class="co"># &quot;driver&quot; &quot;pass&quot;</span></span>
+<span id="cb13-10"><a href="#cb13-10"></a> )</span>
+<span id="cb13-11"><a href="#cb13-11"></a></span>
+<span id="cb13-12"><a href="#cb13-12"></a><span class="co">## predicted probability of death for these variables, as a percentage</span></span>
+<span id="cb13-13"><a href="#cb13-13"></a><span class="kw">as.numeric</span>(<span class="kw">predict</span>(accident_model,newdata, <span class="dt">type=</span><span class="st">&quot;response&quot;</span>)<span class="op">*</span><span class="dv">100</span>)</span></code></pre></div>
+</div>
+</div>
+<div id="deploy-as-a-web-service" class="section level2">
+<h2>Deploy as a web service</h2>
+<p>With your model, you can predict the danger of death from a collision. Use Azure ML to deploy your model as a prediction service. In this tutorial, you will deploy the web service in <a href="https://docs.microsoft.com/en-us/azure/container-instances/">Azure Container Instances</a> (ACI).</p>
+<div id="register-the-model" class="section level3">
+<h3>Register the model</h3>
+<p>First, register the model you downloaded to your workspace with <a href="https://azure.github.io/azureml-sdk-for-r/reference/register_model.html"><code>register_model()</code></a>. A registered model can be any collection of files, but in this case the R model object is sufficient. Azure ML will use the registered model for deployment.</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1"></a>model &lt;-<span class="st"> </span><span class="kw">register_model</span>(ws, </span>
+<span id="cb14-2"><a href="#cb14-2"></a>                        <span class="dt">model_path =</span> <span class="st">&quot;outputs/model.rds&quot;</span>, </span>
+<span id="cb14-3"><a href="#cb14-3"></a>                        <span class="dt">model_name =</span> <span class="st">&quot;accidents_model&quot;</span>,</span>
+<span id="cb14-4"><a href="#cb14-4"></a>                        <span class="dt">description =</span> <span class="st">&quot;Predict probablity of auto accident&quot;</span>)</span></code></pre></div>
+</div>
+<div id="define-the-inference-dependencies" class="section level3">
+<h3>Define the inference dependencies</h3>
+<p>To create a web service for your model, you first need to create a scoring script (<code>entry_script</code>), an R script that will take as input variable values (in JSON format) and output a prediction from your model. For this tutorial, use the provided scoring file <code>accident_predict.R</code>. The scoring script must contain an <code>init()</code> method that loads your model and returns a function that uses the model to make a prediction based on the input data. See the <a href="https://azure.github.io/azureml-sdk-for-r/reference/inference_config.html#details">documentation</a> for more details.</p>
+<p>Next, define an Azure ML <strong>environment</strong> for your script’s package dependencies. With an environment, you specify R packages (from CRAN or elsewhere) that are needed for your script to run. You can also provide the values of environment variables that your script can reference to modify its behavior. By default, Azure ML will build the same default Docker image used with the estimator for training. Since the tutorial has no special requirements, create an environment with no special attributes.</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1"></a>r_env &lt;-<span class="st"> </span><span class="kw">r_environment</span>(<span class="dt">name =</span> <span class="st">&quot;basic_env&quot;</span>)</span></code></pre></div>
+<p>If you want to use your own Docker image for deployment instead, specify the <code>custom_docker_image</code> parameter. See the <a href="https://azure.github.io/azureml-sdk-for-r/reference/r_environment.html"><code>r_environment()</code></a> reference for the full set of configurable options for defining an environment.</p>
+<p>Now you have everything you need to create an <strong>inference config</strong> for encapsulating your scoring script and environment dependencies.</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1"></a>inference_config &lt;-<span class="st"> </span><span class="kw">inference_config</span>(</span>
+<span id="cb16-2"><a href="#cb16-2"></a>  <span class="dt">entry_script =</span> <span class="st">&quot;accident_predict.R&quot;</span>,</span>
+<span id="cb16-3"><a href="#cb16-3"></a>  <span class="dt">source_directory =</span> <span class="st">&quot;train-and-deploy-first-model&quot;</span>,</span>
+<span id="cb16-4"><a href="#cb16-4"></a>  <span class="dt">environment =</span> r_env)</span></code></pre></div>
+</div>
+<div id="deploy-to-aci" class="section level3">
+<h3>Deploy to ACI</h3>
+<p>In this tutorial, you will deploy your service to ACI. This code provisions a single container to respond to inbound requests, which is suitable for testing and light loads. See <a href="https://azure.github.io/azureml-sdk-for-r/reference/aci_webservice_deployment_config.html"><code>aci_webservice_deployment_config()</code></a> for additional configurable options. (For production-scale deployments, you can also <a href="https://azure.github.io/azureml-sdk-for-r/articles/deploy-to-aks.html">deploy to Azure Kubernetes Service</a>.)</p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1"></a>aci_config &lt;-<span class="st"> </span><span class="kw">aci_webservice_deployment_config</span>(<span class="dt">cpu_cores =</span> <span class="dv">1</span>, <span class="dt">memory_gb =</span> <span class="fl">0.5</span>)</span></code></pre></div>
+<p>Now you deploy your model as a web service. Deployment <strong>can take several minutes</strong>.</p>
+<div class="sourceCode" id="cb18"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1"></a>aci_service &lt;-<span class="st"> </span><span class="kw">deploy_model</span>(ws, </span>
+<span id="cb18-2"><a href="#cb18-2"></a>                            <span class="st">&#39;accident-pred&#39;</span>, </span>
+<span id="cb18-3"><a href="#cb18-3"></a>                            <span class="kw">list</span>(model), </span>
+<span id="cb18-4"><a href="#cb18-4"></a>                            inference_config, </span>
+<span id="cb18-5"><a href="#cb18-5"></a>                            aci_config)</span>
+<span id="cb18-6"><a href="#cb18-6"></a></span>
+<span id="cb18-7"><a href="#cb18-7"></a><span class="kw">wait_for_deployment</span>(aci_service, <span class="dt">show_output =</span> <span class="ot">TRUE</span>)</span></code></pre></div>
+<p>If you encounter any issue in deploying the web service, please visit the <a href="https://docs.microsoft.com/en-us/azure/machine-learning/service/how-to-troubleshoot-deployment">troubleshooting guide</a>.</p>
+</div>
+</div>
+<div id="test-the-deployed-service" class="section level2">
+<h2>Test the deployed service</h2>
+<p>Now that your model is deployed as a service, you can test the service from R using <a href="https://azure.github.io/azureml-sdk-for-r/reference/invoke_webservice.html"><code>invoke_webservice()</code></a>. Provide a new set of data to predict from, convert it to JSON, and send it to the service.</p>
+<div class="sourceCode" id="cb19"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1"></a><span class="kw">library</span>(jsonlite)</span>
+<span id="cb19-2"><a href="#cb19-2"></a></span>
+<span id="cb19-3"><a href="#cb19-3"></a>newdata &lt;-<span class="st"> </span><span class="kw">data.frame</span>( <span class="co"># valid values shown below</span></span>
+<span id="cb19-4"><a href="#cb19-4"></a> <span class="dt">dvcat=</span><span class="st">&quot;10-24&quot;</span>,        <span class="co"># &quot;1-9km/h&quot; &quot;10-24&quot;   &quot;25-39&quot;   &quot;40-54&quot;   &quot;55+&quot;  </span></span>
+<span id="cb19-5"><a href="#cb19-5"></a> <span class="dt">seatbelt=</span><span class="st">&quot;none&quot;</span>,      <span class="co"># &quot;none&quot;   &quot;belted&quot;  </span></span>
+<span id="cb19-6"><a href="#cb19-6"></a> <span class="dt">frontal=</span><span class="st">&quot;frontal&quot;</span>,    <span class="co"># &quot;notfrontal&quot; &quot;frontal&quot;</span></span>
+<span id="cb19-7"><a href="#cb19-7"></a> <span class="dt">sex=</span><span class="st">&quot;f&quot;</span>,              <span class="co"># &quot;f&quot; &quot;m&quot;</span></span>
+<span id="cb19-8"><a href="#cb19-8"></a> <span class="dt">ageOFocc=</span><span class="dv">22</span>,          <span class="co"># age in years, 16-97</span></span>
+<span id="cb19-9"><a href="#cb19-9"></a> <span class="dt">yearVeh=</span><span class="dv">2002</span>,         <span class="co"># year of vehicle, 1955-2003</span></span>
+<span id="cb19-10"><a href="#cb19-10"></a> <span class="dt">airbag=</span><span class="st">&quot;none&quot;</span>,        <span class="co"># &quot;none&quot;   &quot;airbag&quot;   </span></span>
+<span id="cb19-11"><a href="#cb19-11"></a> <span class="dt">occRole=</span><span class="st">&quot;pass&quot;</span>        <span class="co"># &quot;driver&quot; &quot;pass&quot;</span></span>
+<span id="cb19-12"><a href="#cb19-12"></a> )</span>
+<span id="cb19-13"><a href="#cb19-13"></a></span>
+<span id="cb19-14"><a href="#cb19-14"></a>prob &lt;-<span class="st"> </span><span class="kw">invoke_webservice</span>(aci_service, <span class="kw">toJSON</span>(newdata))</span>
+<span id="cb19-15"><a href="#cb19-15"></a>prob</span></code></pre></div>
+</div>
+<div id="clean-up-resources" class="section level2">
+<h2>Clean up resources</h2>
+<p>Delete the resources once you no longer need them. Don’t delete any resource you plan to still use.</p>
+<p>Delete the web service:</p>
+<div class="sourceCode" id="cb20"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1"></a><span class="kw">delete_webservice</span>(aci_service)</span></code></pre></div>
+<p>Delete the registered model:</p>
+<div class="sourceCode" id="cb21"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1"></a><span class="kw">delete_model</span>(model)</span></code></pre></div>
+<p>Delete the compute cluster:</p>
+<div class="sourceCode" id="cb22"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1"></a><span class="kw">delete_compute</span>(compute_target)</span></code></pre></div>
+</div>
+
+
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

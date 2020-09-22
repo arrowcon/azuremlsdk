@@ -10,31 +10,20 @@
 #' @param remove_existing_env delete the conda environment if already exists
 #' @return None
 #' @export
-install_azureml <- function(version = "1.0.85",
-                            envname = NULL,
+install_azureml <- function(version = "1.10.0",
+                            envname = "r-reticulate",
                             conda_python_version = "3.6",
                             restart_session = TRUE,
                             remove_existing_env = FALSE) {
   main_package <- "azureml-sdk"
-  default_packages <- c("numpy")
+  default_packages <- c("numpy", "pandas")
 
-  # set version if provided
-  if (!is.null(version)) {
-    main_package <- paste(main_package, "==", version, sep = "")
-  }
+  # set version
+  main_package <- paste(main_package, "==", version, sep = "")
 
   # check for anaconda installation
   if (is.null(reticulate::conda_binary())) {
     stop("Anaconda not installed or not in system path.")
-  }
-
-  # set envname based on reticulate version
-  if (is.null(envname)) {
-    if (utils::packageVersion("reticulate") >= "1.14") {
-      envname <- "r-reticulate"
-    } else {
-      envname <- "r-azureml"
-    }
   }
 
   # remove the conda environment if needed

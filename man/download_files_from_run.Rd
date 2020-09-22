@@ -4,8 +4,13 @@
 \alias{download_files_from_run}
 \title{Download files from a run}
 \usage{
-download_files_from_run(run, prefix = NULL, output_directory = NULL,
-  output_paths = NULL, batch_size = 100L)
+download_files_from_run(
+  run,
+  prefix = NULL,
+  output_directory = NULL,
+  output_paths = NULL,
+  batch_size = 100L
+)
 }
 \arguments{
 \item{run}{The \code{Run} object.}
@@ -30,4 +35,7 @@ Download files from the run record. You can download any files that
 were uploaded to the run record via \code{upload_files_to_run()} or
 \code{upload_folder_to_run()}, or any files that were written out to
 the \code{./outputs} or \code{./logs} folders during a run.
+}
+\seealso{
+\code{\link[=download_file_from_run]{download_file_from_run()}}
 }

@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+
+<meta name="date" content="2020-09-16" />
+
+<title>Hyperparameter tune a Keras model</title>
+
+<script>// Hide empty <a> tag within highlighted CodeBlock for screen reader accessibility (see https://github.com/jgm/pandoc/issues/6352#issuecomment-626106786) -->
+// v0.0.1
+// Written by JooYoung Seo (jooyoung@psu.edu) and Atsushi Yasumoto on June 1st, 2020.
+
+document.addEventListener('DOMContentLoaded', function() {
+  const codeList = document.getElementsByClassName("sourceCode");
+  for (var i = 0; i < codeList.length; i++) {
+    var linkList = codeList[i].getElementsByTagName('a');
+    for (var j = 0; j < linkList.length; j++) {
+      if (linkList[j].innerHTML === "") {
+        linkList[j].setAttribute('aria-hidden', 'true');
+      }
+    }
+  }
+});
+</script>
+
+
+<style type="text/css">code{white-space: pre;}</style>
+<style type="text/css" data-origin="pandoc">
+code.sourceCode > span { display: inline-block; line-height: 1.25; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode { white-space: pre; position: relative; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+code.sourceCode { white-space: pre-wrap; }
+code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+    color: #aaaaaa;
+  }
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code span.at { color: #7d9029; } /* Attribute */
+code span.bn { color: #40a070; } /* BaseN */
+code span.bu { } /* BuiltIn */
+code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code span.ch { color: #4070a0; } /* Char */
+code span.cn { color: #880000; } /* Constant */
+code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code span.dt { color: #902000; } /* DataType */
+code span.dv { color: #40a070; } /* DecVal */
+code span.er { color: #ff0000; font-weight: bold; } /* Error */
+code span.ex { } /* Extension */
+code span.fl { color: #40a070; } /* Float */
+code span.fu { color: #06287e; } /* Function */
+code span.im { } /* Import */
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code span.op { color: #666666; } /* Operator */
+code span.ot { color: #007020; } /* Other */
+code span.pp { color: #bc7a00; } /* Preprocessor */
+code span.sc { color: #4070a0; } /* SpecialChar */
+code span.ss { color: #bb6688; } /* SpecialString */
+code span.st { color: #4070a0; } /* String */
+code span.va { color: #19177c; } /* Variable */
+code span.vs { color: #4070a0; } /* VerbatimString */
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    for (var j = 0; j < rules.length; j++) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") continue;
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') continue;
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; } 
+code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">Hyperparameter tune a Keras model</h1>
+<h4 class="date">2020-09-16</h4>
+
+
+
+<p>This tutorial demonstrates how you can efficiently tune hyperparameters for a model using HyperDrive, Azure ML’s hyperparameter tuning functionality. You will train a Keras model on the CIFAR10 dataset, automate hyperparameter exploration, launch parallel jobs, log your results, and find the best run.</p>
+<div id="what-are-hyperparameters" class="section level3">
+<h3>What are hyperparameters?</h3>
+<p>Hyperparameters are variable parameters chosen to train a model. Learning rate, number of epochs, and batch size are all examples of hyperparameters.</p>
+<p>Using brute-force methods to find the optimal values for parameters can be time-consuming, and poor-performing runs can result in wasted money. To avoid this, HyperDrive automates hyperparameter exploration in a time-saving and cost-effective manner by launching several parallel runs with different configurations and finding the configuration that results in best performance on your primary metric.</p>
+<p>Let’s get started with the example to see how it works!</p>
+</div>
+<div id="prerequisites" class="section level2">
+<h2>Prerequisites</h2>
+<p>If you don’t have access to an Azure ML workspace, follow the <a href="https://azure.github.io/azureml-sdk-for-r/articles/configuration.html">setup tutorial</a> to configure and create a workspace.</p>
+</div>
+<div id="set-up-development-environment" class="section level2">
+<h2>Set up development environment</h2>
+<p>The setup for your development work in this tutorial includes the following actions:</p>
+<ul>
+<li>Import required packages</li>
+<li>Connect to a workspace</li>
+<li>Create an experiment to track your runs</li>
+<li>Create a remote compute target to use for training</li>
+</ul>
+<div id="import-azuremlsdk-package" class="section level3">
+<h3>Import <strong>azuremlsdk</strong> package</h3>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1"></a><span class="kw">library</span>(azuremlsdk)</span></code></pre></div>
+</div>
+<div id="load-your-workspace" class="section level3">
+<h3>Load your workspace</h3>
+<p>Instantiate a workspace object from your existing workspace. The following code will load the workspace details from a <strong>config.json</strong> file if you previously wrote one out with <a href="https://azure.github.io/azureml-sdk-for-r/reference/write_workspace_config.html"><code>write_workspace_config()</code></a>.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1"></a>ws &lt;-<span class="st"> </span><span class="kw">load_workspace_from_config</span>()</span></code></pre></div>
+<p>Or, you can retrieve a workspace by directly specifying your workspace details:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1"></a>ws &lt;-<span class="st"> </span><span class="kw">get_workspace</span>(<span class="st">&quot;&lt;your workspace name&gt;&quot;</span>, <span class="st">&quot;&lt;your subscription ID&gt;&quot;</span>, <span class="st">&quot;&lt;your resource group&gt;&quot;</span>)</span></code></pre></div>
+</div>
+<div id="create-an-experiment" class="section level3">
+<h3>Create an experiment</h3>
+<p>An Azure ML <strong>experiment</strong> tracks a grouping of runs, typically from the same training script. Create an experiment to track hyperparameter tuning runs for the Keras model.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1"></a>exp &lt;-<span class="st"> </span><span class="kw">experiment</span>(<span class="dt">workspace =</span> ws, <span class="dt">name =</span> <span class="st">&#39;hyperdrive-cifar10&#39;</span>)</span></code></pre></div>
+<p>If you would like to track your runs in an existing experiment, simply specify that experiment’s name to the <code>name</code> parameter of <code>experiment()</code>.</p>
+</div>
+<div id="create-a-compute-target" class="section level3">
+<h3>Create a compute target</h3>
+<p>By using Azure Machine Learning Compute (AmlCompute), a managed service, data scientists can train machine learning models on clusters of Azure virtual machines. In this tutorial, you create a GPU-enabled cluster as your training environment. The code below creates the compute cluster for you if it doesn’t already exist in your workspace.</p>
+<p>You may need to wait a few minutes for your compute cluster to be provisioned if it doesn’t already exist.</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1"></a>cluster_name &lt;-<span class="st"> &quot;gpucluster&quot;</span></span>
+<span id="cb5-2"><a href="#cb5-2"></a></span>
+<span id="cb5-3"><a href="#cb5-3"></a>compute_target &lt;-<span class="st"> </span><span class="kw">get_compute</span>(ws, <span class="dt">cluster_name =</span> cluster_name)</span>
+<span id="cb5-4"><a href="#cb5-4"></a><span class="cf">if</span> (<span class="kw">is.null</span>(compute_target))</span>
+<span id="cb5-5"><a href="#cb5-5"></a>{</span>
+<span id="cb5-6"><a href="#cb5-6"></a>  vm_size &lt;-<span class="st"> &quot;STANDARD_NC6&quot;</span></span>
+<span id="cb5-7"><a href="#cb5-7"></a>  compute_target &lt;-<span class="st"> </span><span class="kw">create_aml_compute</span>(<span class="dt">workspace =</span> ws, </span>
+<span id="cb5-8"><a href="#cb5-8"></a>                                       <span class="dt">cluster_name =</span> cluster_name,</span>
+<span id="cb5-9"><a href="#cb5-9"></a>                                       <span class="dt">vm_size =</span> vm_size, </span>
+<span id="cb5-10"><a href="#cb5-10"></a>                                       <span class="dt">max_nodes =</span> <span class="dv">4</span>)</span>
+<span id="cb5-11"><a href="#cb5-11"></a>  </span>
+<span id="cb5-12"><a href="#cb5-12"></a>  <span class="kw">wait_for_provisioning_completion</span>(compute_target, <span class="dt">show_output =</span> <span class="ot">TRUE</span>)</span>
+<span id="cb5-13"><a href="#cb5-13"></a>}</span></code></pre></div>
+</div>
+</div>
+<div id="prepare-the-training-script" class="section level2">
+<h2>Prepare the training script</h2>
+<p>A training script called <code>cifar10_cnn.R</code> has been provided for you in the <code>hyperparameter-tune-with-keras</code> folder.</p>
+<p>In order to leverage HyperDrive, the training script for your model must log the relevant metrics during model training. When you configure the hyperparameter tuning run, you specify the primary metric to use for evaluating run performance. You must log this metric so it is available to the hyperparameter tuning process.</p>
+<p>In order to log the required metrics, you need to do the following <strong>inside the training script</strong>:</p>
+<ul>
+<li>Import the <strong>azuremlsdk</strong> package</li>
+</ul>
+<pre><code>library(azuremlsdk)</code></pre>
+<ul>
+<li><p>Take the hyperparameters as command-line arguments to the script. This is necessary so that when HyperDrive carries out the hyperparameter sweep, it can run the training script with different values to the hyperparameters as defined by the search space.</p></li>
+<li><p>Use the <a href="https://azure.github.io/azureml-sdk-for-r/reference/log_metric_to_run.html"><code>log_metric_to_run()</code></a> function to log the hyperparameters and the primary metric.</p></li>
+</ul>
+<pre><code>log_metric_to_run(&quot;batch_size&quot;, batch_size)
+...
+log_metric_to_run(&quot;epochs&quot;, epochs)
+...
+log_metric_to_run(&quot;lr&quot;, lr)
+...
+log_metric_to_run(&quot;decay&quot;, decay)
+...
+log_metric_to_run(&quot;Loss&quot;, results[[1]])</code></pre>
+</div>
+<div id="create-an-estimator" class="section level2">
+<h2>Create an estimator</h2>
+<p>An Azure ML <strong>estimator</strong> encapsulates the run configuration information needed for executing a training script on the compute target. Azure ML runs are run as containerized jobs on the specified compute target. The estimator is used to define the configuration for each of the child runs that the parent HyperDrive run will kick off.</p>
+<p>To create the estimator, define the following:</p>
+<ul>
+<li>The directory that contains your scripts needed for training (<code>source_directory</code>). All the files in this directory are uploaded to the cluster node(s) for execution. The directory must contain your training script and any additional scripts required.</li>
+<li>The training script that will be executed (<code>entry_script</code>).</li>
+<li>The compute target (<code>compute_target</code>), in this case the AmlCompute cluster you created earlier.</li>
+<li>Any environment dependencies required for training. For full control over your training environment (instead of using the defaults), you can create a custom Docker image to use for your remote run, which is what we’ve done in this example. The Docker image includes the necessary packages for Keras GPU training. The Dockerfile used to build the image is included in the <code>hyperparameter-tune-with-keras/</code> folder for reference. See the <a href="https://azure.github.io/azureml-sdk-for-r/reference/r_environment.html"><code>r_environment()</code></a> reference for the full set of configurable options.</li>
+</ul>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1"></a>env &lt;-<span class="st"> </span><span class="kw">r_environment</span>(<span class="st">&quot;keras-env&quot;</span>, <span class="dt">custom_docker_image =</span> <span class="st">&quot;amlsamples/r-keras:latest&quot;</span>)</span>
+<span id="cb8-2"><a href="#cb8-2"></a></span>
+<span id="cb8-3"><a href="#cb8-3"></a>est &lt;-<span class="st"> </span><span class="kw">estimator</span>(<span class="dt">source_directory =</span> <span class="st">&quot;hyperparameter-tune-with-keras&quot;</span>,</span>
+<span id="cb8-4"><a href="#cb8-4"></a>                 <span class="dt">entry_script =</span> <span class="st">&quot;cifar10_cnn.R&quot;</span>,</span>
+<span id="cb8-5"><a href="#cb8-5"></a>                 <span class="dt">compute_target =</span> compute_target,</span>
+<span id="cb8-6"><a href="#cb8-6"></a>                 <span class="dt">environment =</span> env)</span></code></pre></div>
+</div>
+<div id="configure-the-hyperdrive-run" class="section level2">
+<h2>Configure the HyperDrive run</h2>
+<p>To kick off hyperparameter tuning in Azure ML, you will need to configure a HyperDrive run, which will in turn launch individual children runs of the training scripts with the corresponding hyperparameter values.</p>
+<div id="define-search-space" class="section level3">
+<h3>Define search space</h3>
+<p>In this experiment, we will use four hyperparameters: batch size, number of epochs, learning rate, and decay. In order to begin tuning, we must define the range of values we would like to explore from and how they will be distributed. This is called a parameter space definition and can be created with discrete or continuous ranges.</p>
+<p><strong>Discrete hyperparameters</strong> are specified as a choice among discrete values represented as a list.</p>
+<p>Advanced discrete hyperparameters can also be specified using a distribution. The following distributions are supported:</p>
+<ul>
+<li><code>quniform(low, high, q)</code></li>
+<li><code>qloguniform(low, high, q)</code></li>
+<li><code>qnormal(mu, sigma, q)</code></li>
+<li><code>qlognormal(mu, sigma, q)</code></li>
+</ul>
+<p><strong>Continuous hyperparameters</strong> are specified as a distribution over a continuous range of values. The following distributions are supported:</p>
+<ul>
+<li><code>uniform(low, high)</code></li>
+<li><code>loguniform(low, high)</code></li>
+<li><code>normal(mu, sigma)</code></li>
+<li><code>lognormal(mu, sigma)</code></li>
+</ul>
+<p>Here, we will use the <a href="https://azure.github.io/azureml-sdk-for-r/reference/random_parameter_sampling.html"><code>random_parameter_sampling()</code></a> function to define the search space for each hyperparameter. <code>batch_size</code> and <code>epochs</code> will be chosen from discrete sets while <code>lr</code> and <code>decay</code> will be drawn from continuous distributions. If you wish to fix a script parameter’s value, simply remove it from your sampling function list, and it will be excluded from tuning and kept at the value assigned to it in the estimator step.</p>
+<p>Other available sampling function options are:</p>
+<ul>
+<li><a href="https://azure.github.io/azureml-sdk-for-r/reference/grid_parameter_sampling.html"><code>grid_parameter_sampling()</code></a></li>
+<li><a href="https://azure.github.io/azureml-sdk-for-r/reference/bayesian_parameter_sampling.html"><code>bayesian_parameter_sampling()</code></a></li>
+</ul>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1"></a>sampling &lt;-<span class="st"> </span><span class="kw">random_parameter_sampling</span>(<span class="kw">list</span>(<span class="dt">batch_size =</span> <span class="kw">choice</span>(<span class="kw">c</span>(<span class="dv">16</span>, <span class="dv">32</span>, <span class="dv">64</span>)),</span>
+<span id="cb9-2"><a href="#cb9-2"></a>                                           <span class="dt">epochs =</span> <span class="kw">choice</span>(<span class="kw">c</span>(<span class="dv">200</span>, <span class="dv">350</span>, <span class="dv">500</span>)),</span>
+<span id="cb9-3"><a href="#cb9-3"></a>                                           <span class="dt">lr =</span> <span class="kw">normal</span>(<span class="fl">0.0001</span>, <span class="fl">0.005</span>),</span>
+<span id="cb9-4"><a href="#cb9-4"></a>                                           <span class="dt">decay =</span> <span class="kw">uniform</span>(<span class="fl">1e-6</span>, <span class="fl">3e-6</span>)))</span></code></pre></div>
+</div>
+<div id="define-termination-policy" class="section level3">
+<h3>Define termination policy</h3>
+<p>To prevent resource waste, Azure ML can detect and terminate poorly performing runs. HyperDrive will do this automatically if you specify an early termination policy.</p>
+<p>Here, you will use the <a href="https://azure.github.io/azureml-sdk-for-r/reference/bandit_policy.html"><code>bandit_policy()</code></a>, which terminates any runs where the primary metric is not within the specified slack factor with respect to the best performing training run.</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1"></a>policy &lt;-<span class="st"> </span><span class="kw">bandit_policy</span>(<span class="dt">slack_factor =</span> <span class="fl">0.15</span>)</span></code></pre></div>
+<p>Other termination policy options are:</p>
+<ul>
+<li><a href="https://azure.github.io/azureml-sdk-for-r/reference/median_stopping_policy.html"><code>median_stopping_policy()</code></a></li>
+<li><a href="https://azure.github.io/azureml-sdk-for-r/reference/truncation_selection_policy.html"><code>truncation_selection_policy()</code></a></li>
+</ul>
+<p>If no policy is provided, all runs will continue to completion regardless of performance.</p>
+</div>
+<div id="finalize-configuration" class="section level3">
+<h3>Finalize configuration</h3>
+<p>Now, you can create a <code>HyperDriveConfig</code> object to define your HyperDrive run. Along with the sampling and policy definitions, you need to specify the name of the primary metric that you want to track and whether we want to maximize it or minimize it. The <code>primary_metric_name</code> must correspond with the name of the primary metric you logged in your training script. <code>max_total_runs</code> specifies the total number of child runs to launch. See the <a href="https://azure.github.io/azureml-sdk-for-r/reference/hyperdrive_config.html">hyperdrive_config()</a> reference for the full set of configurable parameters.</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1"></a>hyperdrive_config &lt;-<span class="st"> </span><span class="kw">hyperdrive_config</span>(<span class="dt">hyperparameter_sampling =</span> sampling,</span>
+<span id="cb11-2"><a href="#cb11-2"></a>                                       <span class="kw">primary_metric_goal</span>(<span class="st">&quot;MINIMIZE&quot;</span>),</span>
+<span id="cb11-3"><a href="#cb11-3"></a>                                       <span class="dt">primary_metric_name =</span> <span class="st">&quot;Loss&quot;</span>,</span>
+<span id="cb11-4"><a href="#cb11-4"></a>                                       <span class="dt">max_total_runs =</span> <span class="dv">8</span>,</span>
+<span id="cb11-5"><a href="#cb11-5"></a>                                       <span class="dt">policy =</span> policy,</span>
+<span id="cb11-6"><a href="#cb11-6"></a>                                       <span class="dt">estimator =</span> est)</span></code></pre></div>
+</div>
+</div>
+<div id="submit-the-hyperdrive-run" class="section level2">
+<h2>Submit the HyperDrive run</h2>
+<p>Finally submit the experiment to run on your cluster. The parent HyperDrive run will launch the individual child runs. <code>submit_experiment()</code> will return a <code>HyperDriveRun</code> object that you will use to interface with the run. In this tutorial, since the cluster we created scales to a max of <code>4</code> nodes, all 4 child runs will be launched in parallel.</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1"></a>hyperdrive_run &lt;-<span class="st"> </span><span class="kw">submit_experiment</span>(exp, hyperdrive_config)</span></code></pre></div>
+<p>You can view the HyperDrive run’s details as a table. Clicking the “Web View” link provided will bring you to Azure Machine Learning studio, where you can monitor the run in the UI.</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1"></a><span class="kw">plot_run_details</span>(hyperdrive_run)</span></code></pre></div>
+<p>Wait until hyperparameter tuning is complete before you run more code.</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1"></a><span class="kw">wait_for_run_completion</span>(hyperdrive_run, <span class="dt">show_output =</span> <span class="ot">TRUE</span>)</span></code></pre></div>
+</div>
+<div id="analyse-runs-by-performance" class="section level2">
+<h2>Analyse runs by performance</h2>
+<p>Finally, you can view and compare the metrics collected during all of the child runs!</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1"></a><span class="co"># Get the metrics of all the child runs</span></span>
+<span id="cb15-2"><a href="#cb15-2"></a>child_run_metrics &lt;-<span class="st"> </span><span class="kw">get_child_run_metrics</span>(hyperdrive_run)</span>
+<span id="cb15-3"><a href="#cb15-3"></a>child_run_metrics</span>
+<span id="cb15-4"><a href="#cb15-4"></a></span>
+<span id="cb15-5"><a href="#cb15-5"></a><span class="co"># Get the child run objects sorted in descending order by the best primary metric</span></span>
+<span id="cb15-6"><a href="#cb15-6"></a>child_runs &lt;-<span class="st"> </span><span class="kw">get_child_runs_sorted_by_primary_metric</span>(hyperdrive_run)</span>
+<span id="cb15-7"><a href="#cb15-7"></a>child_runs</span>
+<span id="cb15-8"><a href="#cb15-8"></a></span>
+<span id="cb15-9"><a href="#cb15-9"></a><span class="co"># Directly get the run object of the best performing run</span></span>
+<span id="cb15-10"><a href="#cb15-10"></a>best_run &lt;-<span class="st"> </span><span class="kw">get_best_run_by_primary_metric</span>(hyperdrive_run)</span>
+<span id="cb15-11"><a href="#cb15-11"></a></span>
+<span id="cb15-12"><a href="#cb15-12"></a><span class="co"># Get the metrics of the best performing run</span></span>
+<span id="cb15-13"><a href="#cb15-13"></a>metrics &lt;-<span class="st"> </span><span class="kw">get_run_metrics</span>(best_run)</span>
+<span id="cb15-14"><a href="#cb15-14"></a>metrics</span></code></pre></div>
+<p>The <code>metrics</code> variable will include the values of the hyperparameters that resulted in the best performing run.</p>
+</div>
+<div id="clean-up-resources" class="section level2">
+<h2>Clean up resources</h2>
+<p>Delete the resources once you no longer need them. Don’t delete any resource you plan to still use.</p>
+<p>Delete the compute cluster:</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1"></a><span class="kw">delete_compute</span>(compute_target)</span></code></pre></div>
+</div>
+
+
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

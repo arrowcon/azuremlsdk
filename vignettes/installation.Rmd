@@ -37,23 +37,17 @@ remotes::install_cran('azuremlsdk', repos = 'https://cloud.r-project.org/', INST
 
 ## Install the Azure ML Python SDK
 Lastly, use the **azuremlsdk** R library to install the [latest version of the Python SDK](https://pypi.org/project/azureml-sdk/).
-
-If using an Azure Machine Learning Compute Instance or a CRAN installation with `reticulate >= 1.14`, use the `azuremlsdk::install_azureml()` function with the conda environment set to `r-reticulate`.
-``` {r install_pythonsdk1, eval=FALSE}
-azuremlsdk::install_azureml(envname = 'r-reticulate')
-```
-
-If using a CRAN installation with `reticulate < 1.14` or a GitHub installation, the correct conda environment will be selected automatically. There is no need to specify the `envname` parameter.
-``` {r install_pythonsdk2, eval=FALSE}
+``` {r install_pythonsdk, eval=FALSE}
 azuremlsdk::install_azureml()
 ```
 
-If you would like to override the default version, environment name, or Python version, you can pass in those arguments. If you would like to restart the R session after installation or delete the conda environment if it already exists and create a new environment, you can also do so: 
+By default, `install_azureml()` creates a conda environment called 'r-reticulate', installs the Python SDK in that environment, and restarts the R session after installation (if running in RStudio).
+If you would like to override the default version of the Python SDK, the environment name, or the Python version, you can pass in those arguments. If you would like to  delete the conda environment if it already exists and create a new environment, or not restart the R session after installation, you can also do so: 
 ``` {r eval=FALSE}
 azuremlsdk::install_azureml(version = NULL, 
                             envname = "<your conda environment name>",
                             conda_python_version = "<desired python version>",
-                            restart_session = TRUE,
+                            restart_session = FALSE,
                             remove_existing_env = TRUE)
 ```
 
@@ -65,6 +59,18 @@ get_current_run()
 ```
 
 ## Troubleshooting
+-   If you're using the compute instance, the first time you run `library(azuremlsdk)` you may run into the following prompt:
+
+    ```R
+    > library(azuremlsdk)
+    No non-system installation of Python could be found.
+    Would you like to download and install Miniconda?
+    Miniconda is an open source environment management system for Python.
+    See https://docs.conda.io/en/latest/miniconda.html for more details.
+    ```
+    
+    This is the reticulate package prompting the user if they want to have Miniconda installed (see [GitHub issue](https://github.com/rstudio/reticulate/issues/607)). Since the compute instance already has Anaconda, you can just respond "N" to the prompt. You will receive the message "Installation aborted", which just means that Miniconda won't be installed. You will only be prompted for this once for each new compute instance you spin up.
+
 -   In step 3 of the installation, if you get ssl errors on windows, it is due to an
 outdated openssl binary. Install the latest openssl binaries from
 [here](https://wiki.openssl.org/index.php/Binaries).

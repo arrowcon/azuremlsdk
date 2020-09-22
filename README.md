@@ -1,4 +1,4 @@
-# Azure Machine Learning SDK for R
+# Azure Machine Learning SDK for R (preview)
 [![Build Status](https://msdata.visualstudio.com/Vienna/_apis/build/status/AzureML-SDK%20R/R%20SDK%20Function%20Tests?branchName=master&label=Build%20%26%20Tests)](https://azure.microsoft.com/en-us/services/devops/pipelines/)
 [![Build Status](https://msdata.visualstudio.com/Vienna/_apis/build/status/AzureML-SDK%20R/R%20SDK%20Code%20Quality?branchName=master&label=Code%20Quality)](https://azure.microsoft.com/en-us/services/devops/pipelines/)
 [![Build Status](https://msdata.visualstudio.com/Vienna/_apis/build/status/AzureML-SDK%20R/R%20SDK%20Sample%20Validation?branchName=master&&label=Samples)](https://azure.microsoft.com/en-us/services/devops/pipelines/)
@@ -44,7 +44,7 @@ install.packages("azuremlsdk")
 
 # Or the development version from GitHub
 install.packages("remotes")
-remotes::install_github('https://github.com/Azure/azureml-sdk-for-r')
+remotes::install_github('https://github.com/Azure/azureml-sdk-for-r', build_vignettes = TRUE)
 
 # Then, use `install_azureml()` to install the compiled code from the AzureML Python SDK.
 azuremlsdk::install_azureml()

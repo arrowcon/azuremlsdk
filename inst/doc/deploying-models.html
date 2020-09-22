@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+
+<meta name="date" content="2020-09-16" />
+
+<title>Deploying models</title>
+
+<script>// Hide empty <a> tag within highlighted CodeBlock for screen reader accessibility (see https://github.com/jgm/pandoc/issues/6352#issuecomment-626106786) -->
+// v0.0.1
+// Written by JooYoung Seo (jooyoung@psu.edu) and Atsushi Yasumoto on June 1st, 2020.
+
+document.addEventListener('DOMContentLoaded', function() {
+  const codeList = document.getElementsByClassName("sourceCode");
+  for (var i = 0; i < codeList.length; i++) {
+    var linkList = codeList[i].getElementsByTagName('a');
+    for (var j = 0; j < linkList.length; j++) {
+      if (linkList[j].innerHTML === "") {
+        linkList[j].setAttribute('aria-hidden', 'true');
+      }
+    }
+  }
+});
+</script>
+
+
+<style type="text/css">code{white-space: pre;}</style>
+<style type="text/css" data-origin="pandoc">
+code.sourceCode > span { display: inline-block; line-height: 1.25; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode { white-space: pre; position: relative; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+code.sourceCode { white-space: pre-wrap; }
+code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+    color: #aaaaaa;
+  }
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code span.at { color: #7d9029; } /* Attribute */
+code span.bn { color: #40a070; } /* BaseN */
+code span.bu { } /* BuiltIn */
+code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code span.ch { color: #4070a0; } /* Char */
+code span.cn { color: #880000; } /* Constant */
+code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code span.dt { color: #902000; } /* DataType */
+code span.dv { color: #40a070; } /* DecVal */
+code span.er { color: #ff0000; font-weight: bold; } /* Error */
+code span.ex { } /* Extension */
+code span.fl { color: #40a070; } /* Float */
+code span.fu { color: #06287e; } /* Function */
+code span.im { } /* Import */
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code span.op { color: #666666; } /* Operator */
+code span.ot { color: #007020; } /* Other */
+code span.pp { color: #bc7a00; } /* Preprocessor */
+code span.sc { color: #4070a0; } /* SpecialChar */
+code span.ss { color: #bb6688; } /* SpecialString */
+code span.st { color: #4070a0; } /* String */
+code span.va { color: #19177c; } /* Variable */
+code span.vs { color: #4070a0; } /* VerbatimString */
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    for (var j = 0; j < rules.length; j++) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") continue;
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') continue;
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; } 
+code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">Deploying models</h1>
+<h4 class="date">2020-09-16</h4>
+
+
+
+<p>This guide covers the details for deploying models as web services on Azure Machine Learning.</p>
+<div id="choose-a-compute-target" class="section level2">
+<h2>Choose a compute target</h2>
+<p>You can use the following compute targets, or compute resources, to host your web service deployment:</p>
+<table>
+<colgroup>
+<col width="31%"></col>
+<col width="18%"></col>
+<col width="25%"></col>
+<col width="25%"></col>
+</colgroup>
+<thead>
+<tr class="header">
+<th>Compute target</th>
+<th>Used for</th>
+<th>GPU support</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Local web service</td>
+<td>Testing/debugging</td>
+<td></td>
+<td>Use for limited testing and troubleshooting. Hardware acceleration depends on use of libraries in the local system.</td>
+</tr>
+<tr class="even">
+<td>Azure ML compute instance web service</td>
+<td>Testing/debugging</td>
+<td></td>
+<td>Used for limited testing and troubleshooting.</td>
+</tr>
+<tr class="odd">
+<td>Azure Container Instances (ACI)</td>
+<td>Testing or development</td>
+<td></td>
+<td>Use for low-scale CPU-based workloads that require less than 48 GB of RAM.</td>
+</tr>
+<tr class="even">
+<td>Azure Kubernetes Service (AKS)</td>
+<td>Real-time inference</td>
+<td>Yes</td>
+<td>Use for high-scale production deployments. Provides fast response time and autoscaling of the deployed service. Cluster autoscaling isn’t supported through the Azure Machine Learning SDK. To change the nodes in the AKS cluster, use the UI for your AKS cluster in the Azure portal.</td>
+</tr>
+</tbody>
+</table>
+<p>NOTE:<br />
+Although compute targets like local and Azure Machine Learning compute instance support GPU for training and experimentation, using GPU for inference when deployed as a web service is supported only on Azure Kubernetes Service.</p>
+</div>
+<div id="prepare-deloyment-artifacts" class="section level2">
+<h2>Prepare deloyment artifacts</h2>
+<p>To deploy a model, you need the following:</p>
+<ul>
+<li><strong>Entry script and source code dependencies</strong>: This script accepts requests, scores the requests by using the model, and returns the results.</li>
+<li><strong>Inference environment</strong>: The Azure ML environment, which includes the package dependencies required to run the model.</li>
+<li><strong>Deployment configuration</strong>: The configuration for the compute target that hosts the deployed model. It describes things like memory and CPU requirements needed to run the model.</li>
+</ul>
+<div id="define-your-entry-script-and-dependencies" class="section level3">
+<h3>1. Define your entry script and dependencies</h3>
+<p>To deploy a model, you must provide an entry script (also referred to as the scoring script) that accepts requests, scores the requests by using the model, and returns the results. The entry script is specific to your model. It must understand the format of the incoming request data, the format of the data expected by your model, and the format of the data returned to clients. If the request data is in a format that is not usable by your model, the script can transform it into an acceptable format. It can also transform the response before returning it to the client.</p>
+<p>The entry script must contain an <strong><code>init()</code></strong> method that loads your model and then returns a function that uses the model to make a prediction based on the input data passed to the function. Azure ML runs the <code>init()</code> method once, when the Docker container for your web service is started. The prediction function returned by <code>init()</code> will be run every time the service is invoked to make a prediction on some input data. The inputs and outputs of this prediction function typically use JSON for serialization and deserialization.</p>
+<div id="locate-model-files-in-your-entry-script" class="section level4">
+<h4>Locate model files in your entry script</h4>
+<p>To locate the registered model(s) in your entry script, use the <code>AZUREML_MODEL_DIR</code> environment variable that is created during the service deployment. This environment variable contains the path to the model location.</p>
+<p>The following table describes the value of <code>AZUREML_MODEL_DIR</code> depending on the number of models deployed:</p>
+<table>
+<colgroup>
+<col width="27%"></col>
+<col width="72%"></col>
+</colgroup>
+<thead>
+<tr class="header">
+<th>Deployment</th>
+<th>Environment variable value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Single model</td>
+<td>The path to the folder containing the model.</td>
+</tr>
+<tr class="even">
+<td>Multiple models</td>
+<td>The path to the folder containing all models. Models are located by name and version in this folder (<code>$MODEL_NAME/$VERSION</code>)</td>
+</tr>
+</tbody>
+</table>
+<p>To get the path to the model file in your entry script, combine the environment variable with the file path you’re looking for.</p>
+<p><strong>Single model example</strong></p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1"></a><span class="co"># Example when the model is a file</span></span>
+<span id="cb1-2"><a href="#cb1-2"></a>model_path &lt;-<span class="st"> </span><span class="kw">file.path</span>(<span class="kw">Sys.getenv</span>(<span class="st">&#39;AZUREML_MODEL_DIR&#39;</span>), <span class="st">&#39;my_model.rds&#39;</span>)</span>
+<span id="cb1-3"><a href="#cb1-3"></a></span>
+<span id="cb1-4"><a href="#cb1-4"></a><span class="co"># Example when the model is a folder containing a file</span></span>
+<span id="cb1-5"><a href="#cb1-5"></a>model_path &lt;-<span class="st"> </span><span class="kw">file.path</span>(<span class="kw">Sys.getenv</span>(<span class="st">&#39;AZUREML_MODEL_DIR&#39;</span>), <span class="st">&#39;my_model_folder&#39;</span>, <span class="st">&#39;my_model.rds&#39;</span>)</span></code></pre></div>
+<p><strong>Multiple model example</strong></p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1"></a><span class="co"># Example when the model is a file, and the deployment contains multiple versions of the same model</span></span>
+<span id="cb2-2"><a href="#cb2-2"></a>first_model_path &lt;-<span class="st"> </span><span class="kw">file.path</span>(<span class="kw">Sys.getenv</span>(<span class="st">&#39;AZUREML_MODEL_DIR&#39;</span>), <span class="st">&#39;my_model&#39;</span>, <span class="st">&#39;1&#39;</span>, <span class="st">&#39;my_model.rds&#39;</span>)</span>
+<span id="cb2-3"><a href="#cb2-3"></a></span>
+<span id="cb2-4"><a href="#cb2-4"></a>second_model_path &lt;-<span class="st"> </span><span class="kw">file.path</span>(<span class="kw">Sys.getenv</span>(<span class="st">&#39;AZUREML_MODEL_DIR&#39;</span>), <span class="st">&#39;my_model&#39;</span>, <span class="st">&#39;2&#39;</span>, <span class="st">&#39;my_model.rds&#39;</span>)</span></code></pre></div>
+</div>
+<div id="example-entry-script" class="section level4">
+<h4>Example entry script</h4>
+<p>The following is an example entry script. You can see the full tutorial <a href="https://azure.github.io/azureml-sdk-for-r/articles/train-and-deploy-first-model.html">here</a>.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1"></a><span class="kw">library</span>(jsonlite)</span>
+<span id="cb3-2"><a href="#cb3-2"></a></span>
+<span id="cb3-3"><a href="#cb3-3"></a>init &lt;-<span class="st"> </span><span class="cf">function</span>()</span>
+<span id="cb3-4"><a href="#cb3-4"></a>{</span>
+<span id="cb3-5"><a href="#cb3-5"></a>  <span class="co"># Get the path to the model location of the registered model in Azure ML</span></span>
+<span id="cb3-6"><a href="#cb3-6"></a>  model_path &lt;-<span class="st"> </span><span class="kw">Sys.getenv</span>(<span class="st">&quot;AZUREML_MODEL_DIR&quot;</span>)</span>
+<span id="cb3-7"><a href="#cb3-7"></a>  </span>
+<span id="cb3-8"><a href="#cb3-8"></a>  <span class="co"># Load the model</span></span>
+<span id="cb3-9"><a href="#cb3-9"></a>  model &lt;-<span class="st"> </span><span class="kw">readRDS</span>(<span class="kw">file.path</span>(model_path, <span class="st">&quot;model.rds&quot;</span>))</span>
+<span id="cb3-10"><a href="#cb3-10"></a>  <span class="kw">message</span>(<span class="st">&quot;logistic regression model loaded&quot;</span>)</span>
+<span id="cb3-11"><a href="#cb3-11"></a>  </span>
+<span id="cb3-12"><a href="#cb3-12"></a>  <span class="co"># The following method will be called by Azure ML each time the deployed web service is invoked</span></span>
+<span id="cb3-13"><a href="#cb3-13"></a>  <span class="cf">function</span>(data)</span>
+<span id="cb3-14"><a href="#cb3-14"></a>  {</span>
+<span id="cb3-15"><a href="#cb3-15"></a>    <span class="co"># Deserialize the input data to the service</span></span>
+<span id="cb3-16"><a href="#cb3-16"></a>    vars &lt;-<span class="st"> </span><span class="kw">as.data.frame</span>(<span class="kw">fromJSON</span>(data))</span>
+<span id="cb3-17"><a href="#cb3-17"></a>    </span>
+<span id="cb3-18"><a href="#cb3-18"></a>    <span class="co"># Evaluate the data on the deployed model</span></span>
+<span id="cb3-19"><a href="#cb3-19"></a>    prediction &lt;-<span class="st"> </span><span class="kw">as.numeric</span>(<span class="kw">predict</span>(model, vars, <span class="dt">type=</span><span class="st">&quot;response&quot;</span>)<span class="op">*</span><span class="dv">100</span>)</span>
+<span id="cb3-20"><a href="#cb3-20"></a>    </span>
+<span id="cb3-21"><a href="#cb3-21"></a>    <span class="co"># Return the prediction serialized to JSON</span></span>
+<span id="cb3-22"><a href="#cb3-22"></a>    <span class="kw">toJSON</span>(prediction)</span>
+<span id="cb3-23"><a href="#cb3-23"></a>  }</span>
+<span id="cb3-24"><a href="#cb3-24"></a>}</span></code></pre></div>
+</div>
+</div>
+<div id="define-your-inference-environment" class="section level3">
+<h3>2. Define your inference environment</h3>
+<p>You will also need to provide an Azure ML environment (<a href="https://azure.github.io/azureml-sdk-for-r/reference/r_environment.html"><code>r_environment()</code></a>) that defines all the dependencies required to execute your scoring script. You can create a new environment for deployment, or use a previously instatiated environment or registered environment.</p>
+<p>Then define the inference configuration, which consists of the entry script, the environment, and optionally the directory that contains all the files needed to package and deploy your model (such as helper files for the entry script). See the reference documentation for <a href="https://azure.github.io/azureml-sdk-for-r/reference/inference_config.html"><code>inference_config()</code></a>.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1"></a>myenv =<span class="st"> </span><span class="kw">get_environment</span>(ws, <span class="dt">name =</span> <span class="st">&#39;myenv&#39;</span>, <span class="dt">version =</span> <span class="st">&#39;1&#39;</span>)</span>
+<span id="cb4-2"><a href="#cb4-2"></a></span>
+<span id="cb4-3"><a href="#cb4-3"></a>inference_config =<span class="st"> </span><span class="kw">inference_config</span>(<span class="dt">entry_script =</span> <span class="st">&#39;score.R&#39;</span>,</span>
+<span id="cb4-4"><a href="#cb4-4"></a>                                    <span class="dt">source_directory =</span> <span class="st">&#39;./my_scoring_folder&#39;</span>,</span>
+<span id="cb4-5"><a href="#cb4-5"></a>                                    <span class="dt">environment =</span> myenv)</span></code></pre></div>
+<p>Note that if you specify the <code>source_directory</code> parameter, the entry script file must be located in that directory, and the value to <code>entry_script</code> should be the relative path of the file inside that directory.</p>
+</div>
+<div id="define-your-deployment-configuration" class="section level3">
+<h3>3. Define your deployment configuration</h3>
+<p>Before deploying your model, you must define the deployment configuration. The deployment configuration is specific to the compute target that will host the web service. For example, when you deploy a model locally, you must specify the port where the service accepts requests.</p>
+<p>The following table provides examples for creating the deployment configuration for each compute target:</p>
+<table>
+<colgroup>
+<col width="31%"></col>
+<col width="53%"></col>
+<col width="15%"></col>
+</colgroup>
+<thead>
+<tr class="header">
+<th>Compute target</th>
+<th>Deployment configuration</th>
+<th>Example</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Local</td>
+<td><a href="https://azure.github.io/azureml-sdk-for-r/reference/local_webservice_deployment_config.html"><code>local_webservice_deployment_config()</code></a></td>
+<td><code>deployment_config &lt;- local_webservice_deployment_config(port = 8890)</code></td>
+</tr>
+<tr class="even">
+<td>Azure Container Instances (ACI)</td>
+<td><a href="https://azure.github.io/azureml-sdk-for-r/reference/aci_webservice_deployment_config.html"><code>aci_webservice_deployment_config()</code></a></td>
+<td><code>deployment_config &lt;- aci_webservice_deployment_config(cpu_cores = 1, memory_gb = 1)</code></td>
+</tr>
+<tr class="odd">
+<td>Azure Kubernetes Service (AKS)</td>
+<td><a href="https://azure.github.io/azureml-sdk-for-r/reference/aks_webservice_deployment_config.html"><code>aks_webservice_deployment_config()</code></a></td>
+<td><code>deployment_config &lt;- aks_webservice_deployment_config(cpu_cores = 1, memory_gb = 1)</code></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div id="deploy-to-target" class="section level2">
+<h2>Deploy to target</h2>
+<p>Finally, deploy your model(s) as a web service to the target of your choice. To deploy the model(s), you will provide the inference configuration and deployment configuration you created in the above steps, in addition to the models you want to deploy, to <a href="https://azure.github.io/azureml-sdk-for-r/reference/deploy_model.html"><code>deploy_model()</code></a>. If you are deploying to AKS, you will also have to provide the AKS compute target.</p>
+<div id="local-deployment" class="section level3">
+<h3>1. Local deployment</h3>
+<p>To deploy a model locally, you need to have Docker installed on your local machine. If you are deploying locally from a compute instance, Docker will already be installed.</p>
+<p>For an example of local deployment, see the <a href="https://github.com/Azure/azureml-sdk-for-r/tree/master/samples/deployment/deploy-to-local">deploy-to-local</a> sample.</p>
+</div>
+<div id="aci-deployment" class="section level3">
+<h3>2. ACI deployment</h3>
+<p>For an example of deploying to ACI, see the <a href="https://azure.github.io/azureml-sdk-for-r/articles/train-and-deploy-first-model.html">train-and-deploy-to-aci</a> vignette.</p>
+</div>
+<div id="aks-deployment" class="section level3">
+<h3>3. AKS deployment</h3>
+<p>To deploy a model to AKS, you will first need an AKS cluster for the deployment compute target. You can either</p>
+<ul>
+<li>create a new AKS cluster with <a href="https://azure.github.io/azureml-sdk-for-r/reference/create_aks_compute.html"><code>create_aks_compute()</code></a></li>
+<li>or attach an existing AKS cluster if you already have one in your Azure subscription with <a href="https://azure.github.io/azureml-sdk-for-r/reference/attach_aks_compute.html"><code>attach_aks_compute()</code></a></li>
+</ul>
+<p>You can instead also create or attach an AKS cluster via the CLI or <a href="https://ml.azure.com/selectWorkspace">studio</a> UI.</p>
+<p>For an example of deploying to AKS, see the <a href="https://azure.github.io/azureml-sdk-for-r/articles/deploy-to-aks.html">deploy-to-aks</a> vignette.</p>
+</div>
+<div id="troubleshooting-deployment" class="section level3">
+<h3>Troubleshooting deployment</h3>
+<p>If your service deployment fails, you can use <a href="https://azure.github.io/azureml-sdk-for-r/reference/get_webservice_logs.html"><code>get_webservice_logs()</code></a> to inspect the detailed Docker engine log messages from your web service deployment. Note that if your initial deployment fails and you want to attempt a new deployment, you will first need to delete the original web service if you want to use the same web service name. You can use the <a href="https://azure.github.io/azureml-sdk-for-r/reference/delete_webservice.html"><code>delete_webservice()</code></a> method.</p>
+<p>For a more detailed guide on working around or solving common deployment errors, see <a href="https://docs.microsoft.com/azure/machine-learning/how-to-troubleshoot-deployment">Troubleshooting AKS and ACI deployments</a>.</p>
+</div>
+<div id="web-service-authentication" class="section level3">
+<h3>Web service authentication</h3>
+<p>The easiest way to authenticate to deployed web services is to use key-based authentication, which generates static bearer-type authentication keys that do not need to be refreshed.</p>
+<p>AKS deployments additionally support token-based auth.</p>
+<p>The primary difference is that keys are static and can be regenerated manually, and tokens need to be refreshed upon expiration.</p>
+<table>
+<thead>
+<tr class="header">
+<th>Authentication method</th>
+<th>ACI</th>
+<th>AKS</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Key</td>
+<td>Disabled by default</td>
+<td>Enabled by default</td>
+</tr>
+<tr class="even">
+<td>Token</td>
+<td>Not available</td>
+<td>Disabled by default</td>
+</tr>
+</tbody>
+</table>
+<div id="key-based-authentication" class="section level4">
+<h4>Key-based authentication</h4>
+<p>Web services deployed on AKS have key-based auth enabled by default. ACI-deployed services have key-based auth disabled by default, but you can enable it by setting <code>auth_enabled = TRUE</code> when creating the ACI web service. The following is an example of creating an ACI deployment configuration with key-based auth enabled.</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1"></a>deployment_config &lt;-<span class="st"> </span><span class="kw">aci_webservice_deployment_config</span>(<span class="dt">cpu_cores =</span> <span class="dv">1</span>, </span>
+<span id="cb5-2"><a href="#cb5-2"></a>                                                      <span class="dt">memory_gb =</span> <span class="dv">1</span>,</span>
+<span id="cb5-3"><a href="#cb5-3"></a>                                                      <span class="dt">auth_enabled =</span> <span class="ot">TRUE</span>)</span></code></pre></div>
+<p>To fetch the auth keys, use <a href="https://azure.github.io/azureml-sdk-for-r/reference/get_webservice_keys.html"><code>get_webservice_keys()</code></a>. To regenerate a key, use the <a href="https://azure.github.io/azureml-sdk-for-r/reference/generate_new_webservice_key.html"><code>generate_new_webservice_key()</code></a> function:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1"></a><span class="co"># Generate the primary auth key</span></span>
+<span id="cb6-2"><a href="#cb6-2"></a>primary_key &lt;-<span class="st"> </span><span class="kw">generate_new_webservice_key</span>(service, <span class="dt">key_type =</span> <span class="st">&quot;Primary&quot;</span>)</span>
+<span id="cb6-3"><a href="#cb6-3"></a></span>
+<span id="cb6-4"><a href="#cb6-4"></a><span class="co"># Generate the secondary auth key</span></span>
+<span id="cb6-5"><a href="#cb6-5"></a>secondary_key &lt;-<span class="st"> </span><span class="kw">generate_new_webservice_key</span>(service, <span class="dt">key_type =</span> <span class="st">&quot;Secondary&quot;</span>)</span></code></pre></div>
+</div>
+<div id="token-based-authentication" class="section level4">
+<h4>Token-based authentication</h4>
+<p>When you enable token authentication for a web service, users must present an Azure Machine Learning JSON Web Token (JWT) to the web service to access it. The token expires after a specified timeframe and needs to be refreshed to continue making calls.</p>
+<p>Token auth is disabled by default when you deploy to AKS. To control token auth, use the <code>token_auth_enabled</code> parameter when you create or update a deployment:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1"></a>deployment_config &lt;-<span class="st"> </span><span class="kw">aks_webservice_deployment_config</span>(<span class="dt">cpu_cores =</span> <span class="dv">1</span>, </span>
+<span id="cb7-2"><a href="#cb7-2"></a>                                                      <span class="dt">memory_gb =</span> <span class="dv">1</span>,</span>
+<span id="cb7-3"><a href="#cb7-3"></a>                                                      <span class="dt">token_auth_enabled =</span> <span class="ot">TRUE</span>)</span></code></pre></div>
+<p>If token authentication is enabled, you can use the <a href="https://azure.github.io/azureml-sdk-for-r/reference/get_webservice_token.html"><code>get_webservice_token()</code></a> method to retrieve a JWT. You will need to request a new token by the token’s <code>refresh_after</code> time.</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1"></a>aks_service_access_token &lt;-<span class="st"> </span><span class="kw">get_webservice_token</span>(service)</span>
+<span id="cb8-2"><a href="#cb8-2"></a></span>
+<span id="cb8-3"><a href="#cb8-3"></a><span class="co"># Get the JWT</span></span>
+<span id="cb8-4"><a href="#cb8-4"></a>jwt &lt;-<span class="st"> </span>aks_service_access_token<span class="op">$</span>access_token</span>
+<span id="cb8-5"><a href="#cb8-5"></a><span class="co"># Get the time after which token should be refreshed</span></span>
+<span id="cb8-6"><a href="#cb8-6"></a>refresh_after &lt;-<span class="st"> </span>aks_service_access_token<span class="op">$</span>refresh_after</span></code></pre></div>
+<p>We strongly recommend that you create your Azure ML workspace in the same region as your AKS cluster. To authenticate with a token, the web service will make a call to the region in which your workspace is created. If your workspace’s region is unavailable, then you will not be able to fetch a token for your web service, even if your cluster is in a different region than your workspace. This effectively results in token-based auth being unavailable until your workspace’s region is available again. In addition, the greater the distance between your cluster’s region and your workspace’s region, the longer it will take to fetch a token.</p>
+<p>For more information on authentication in Azure ML, see <a href="https://docs.microsoft.com/azure/machine-learning/how-to-setup-authentication">Set up authentication for Azure Machine Learning resources and workflows</a>.</p>
+</div>
+</div>
+</div>
+<div id="consume-web-service" class="section level2">
+<h2>Consume web service</h2>
+<p>Every deployed web service provides a REST endpoint, so you can create client applications in any programming language. If you’ve enabled key-based authentication for your service, you need to provide a service key as a token in your request header. If you’ve enabled token-based authentication for your service, you need to provide an Azure Machine Learning JSON Web Token (JWT) as a bearer token in your request header.</p>
+<p>To get the endpoint for the deployed web service, use the scoring_uri property:</p>
+<pre><code>service$scoring_uri</code></pre>
+<p>You can also retrieve the schema JSON document after you deploy the service. Use the swagger_uri property from the deployed web service to get the URI to the local web service’s Swagger file:</p>
+<pre><code>service$swagger_uri</code></pre>
+<p>You can then use the scoring URI and a package such as <strong>httr</strong> to invoke the web service via request-response consumption.</p>
+<p>Optionally, you can use the <a href="https://azure.github.io/azureml-sdk-for-r/reference/invoke_webservice.html"><code>invoke_webservice()</code></a> method from <strong>azuremlsdk</strong> to directly invoke the web service if you have the web service object:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1"></a><span class="kw">library</span>(jsonlite)</span>
+<span id="cb11-2"><a href="#cb11-2"></a></span>
+<span id="cb11-3"><a href="#cb11-3"></a>newdata &lt;-<span class="st"> </span><span class="kw">data.frame</span>( <span class="co"># valid values shown below</span></span>
+<span id="cb11-4"><a href="#cb11-4"></a> <span class="dt">dvcat=</span><span class="st">&quot;10-24&quot;</span>,        <span class="co"># &quot;1-9km/h&quot; &quot;10-24&quot;   &quot;25-39&quot;   &quot;40-54&quot;   &quot;55+&quot;  </span></span>
+<span id="cb11-5"><a href="#cb11-5"></a> <span class="dt">seatbelt=</span><span class="st">&quot;none&quot;</span>,      <span class="co"># &quot;none&quot;   &quot;belted&quot;  </span></span>
+<span id="cb11-6"><a href="#cb11-6"></a> <span class="dt">frontal=</span><span class="st">&quot;frontal&quot;</span>,    <span class="co"># &quot;notfrontal&quot; &quot;frontal&quot;</span></span>
+<span id="cb11-7"><a href="#cb11-7"></a> <span class="dt">sex=</span><span class="st">&quot;f&quot;</span>,              <span class="co"># &quot;f&quot; &quot;m&quot;</span></span>
+<span id="cb11-8"><a href="#cb11-8"></a> <span class="dt">ageOFocc=</span><span class="dv">22</span>,          <span class="co"># age in years, 16-97</span></span>
+<span id="cb11-9"><a href="#cb11-9"></a> <span class="dt">yearVeh=</span><span class="dv">2002</span>,         <span class="co"># year of vehicle, 1955-2003</span></span>
+<span id="cb11-10"><a href="#cb11-10"></a> <span class="dt">airbag=</span><span class="st">&quot;none&quot;</span>,        <span class="co"># &quot;none&quot;   &quot;airbag&quot;   </span></span>
+<span id="cb11-11"><a href="#cb11-11"></a> <span class="dt">occRole=</span><span class="st">&quot;pass&quot;</span>        <span class="co"># &quot;driver&quot; &quot;pass&quot;</span></span>
+<span id="cb11-12"><a href="#cb11-12"></a> )</span>
+<span id="cb11-13"><a href="#cb11-13"></a></span>
+<span id="cb11-14"><a href="#cb11-14"></a>prob &lt;-<span class="st"> </span><span class="kw">invoke_webservice</span>(service, <span class="kw">toJSON</span>(newdata))</span>
+<span id="cb11-15"><a href="#cb11-15"></a>prob</span></code></pre></div>
+</div>
+<div id="update-web-service" class="section level2">
+<h2>Update web service</h2>
+<p>To update a web service, use the corresponding <code>update_*()</code> method. You can update the web service to use a new model, a new entry script, or new dependencies that can be specified in an inference configuration.</p>
+<ul>
+<li>To update a locally deployed web service, use <a href="https://azure.github.io/azureml-sdk-for-r/reference/update_local_webservice.html"><code>update_local_webservice()</code></a></li>
+<li>To update a deployed ACI web service, use <a href="https://azure.github.io/azureml-sdk-for-r/reference/update_aci_webservice.html"><code>update_aci_webservice()</code></a></li>
+<li>To update a deployed AKS web service, use <a href="https://azure.github.io/azureml-sdk-for-r/reference/update_aks_webservice.html"><code>update_aks_webservice()</code></a></li>
+</ul>
+</div>
+<div id="clean-up-resources" class="section level2">
+<h2>Clean up resources</h2>
+<ul>
+<li>To delete a deployed ACI or AKS web service, use <a href="https://azure.github.io/azureml-sdk-for-r/reference/delete_webservice.html"><code>delete_webservice()</code></a></li>
+<li>To delete a locally deployed web service, use <a href="https://azure.github.io/azureml-sdk-for-r/reference/delete_local_webservice.html"><code>delete_local_webservice()</code></a></li>
+<li>To delete a registered model, use <a href="https://azure.github.io/azureml-sdk-for-r/reference/delete_model.html"><code>delete_model()</code></a></li>
+</ul>
+</div>
+<div id="additional-references" class="section level2">
+<h2>Additional references</h2>
+<p>For additional resources on model deployments, you can refer to the following:</p>
+<ul>
+<li><a href="https://docs.microsoft.com/azure/machine-learning/how-to-deploy-and-where">Deploy models with Azure Machine Learning</a></li>
+<li><a href="https://docs.microsoft.com/azure/machine-learning/how-to-secure-web-service">Securing Azure Machine Learning web services with SSL</a></li>
+<li><a href="https://docs.microsoft.com/azure/machine-learning/how-to-troubleshoot-deployment">Troubleshooting AKS and ACI deployments</a></li>
+<li><a href="https://docs.microsoft.com/azure/machine-learning/how-to-use-event-grid">Create event alerts and triggers for model deployments</a></li>
+<li><a href="https://docs.microsoft.com/azure/machine-learning/how-to-enable-app-insights">Monitor your Azure Machine Learning models with Application Insights</a></li>
+</ul>
+</div>
+
+
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>
